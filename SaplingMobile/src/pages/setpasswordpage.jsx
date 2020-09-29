@@ -165,7 +165,7 @@ class SetPasswordPage extends React.Component {
               <br/><br/>
               {loginbutton}
               <br/><br/><br/>
-              {'ZeroVerse 2.0.0'}
+              {'ZeroVerse 2.0.1'}
             </LoginPassword>
             <LoginSocialContainer>
               <a href="https://www.zerocurrency.io">

@@ -118,7 +118,7 @@ class LoginPage extends React.Component {
                 value={this.state.password}
                 onChange={e => this.setPassword(e.target.value)} />
                 <br/><br/><br/>
-                {'ZeroVerse 2.0.0'}
+                {'ZeroVerse 2.0.1'}
                 <br/>
             </LoginPassword>
             <LoginSocialContainer>
