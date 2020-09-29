@@ -40,7 +40,6 @@ SaplingPlugin/NDK
 
 .vscode/
 dist/
-lib/
 a_str4d/
 NDK/
 plugintest/
@@ -48,8 +47,13 @@ rust-zcash/
 rusttest/
 zero-mobile/
 SaplingPlugin/native/rust/target/
+LiteWallet/native/rust/target
+LiteWallet
+
+SaplingPlugin
 
 #Cryptoforge Specific System
+releases/
 build_release.sh
 cargo-config.toml
 Pirate_ux

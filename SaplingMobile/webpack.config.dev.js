@@ -32,7 +32,7 @@ module.exports = {
               'cordova-plugin-qrscanner',
               'cordova-plugin-webpack',
               'cordova-plugin-whitelist',
-              'cordova-plugin-sapling',
+              'cordova-plugin-litewallet',
               'cordova-plugin-file',
               'cordova-plugin-file-downloader',
               'cordova-plugin-file-md5',

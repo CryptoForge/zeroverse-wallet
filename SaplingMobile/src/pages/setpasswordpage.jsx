@@ -5,8 +5,6 @@ import PropTypes from 'prop-types'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 
-//import axios from 'axios'
-
 import {saltHashPassword,
         PwSalt}from '../utils/hash'
 
@@ -42,8 +40,8 @@ class SetPasswordPage extends React.Component {
       newPasswordValid: false,
       confirmPassword: '',
       confirmPasswordValid: false,
-      noteVisible: 'visible',
-      loginVisible: 'none'
+      noteVisible: 'none',
+      loginVisible: 'visible'
     }
 
     this.setNewPassword = this.setNewPassword.bind(this)
@@ -106,22 +104,21 @@ class SetPasswordPage extends React.Component {
     }
 
     render () {
-      var screenDim = this.props.context.dimensions
 
-      var loginbutton = this.state.confirmPasswordValid == true ? <LoginButton sc={screenDim}
+      var loginbutton = this.state.confirmPasswordValid == true ? <LoginButton
                                                                   onClick={() => this.handleSetPassword()}>
                                                                   Set Password
                                                                   </LoginButton>
                                                                   : ''
 
       return (
-        <LoginGrid sc={screenDim}>
-          <LoginForm sc={screenDim}>
+        <LoginGrid>
+          <LoginForm>
           </LoginForm>
-          <LoginFormOpaque sc={screenDim} visible= {this.state.noteVisible}>
+          <LoginFormOpaque visible= {this.state.noteVisible}>
             <br/>
             <LoginHeading>
-              <LoginHeadingImg src={heading} sc={screenDim}/>
+              <LoginHeadingImg src={heading}/>
             </LoginHeading>
             <LoginPassword>
               Beta
@@ -131,23 +128,23 @@ class SetPasswordPage extends React.Component {
                 <p> This wallet may contain bugs and is intented for evaluation and testing purposes only. </p>
                 <p> Team Zero is not responsible for any Zero you may lose by using this wallet. </p>
               </div>
-              <LoginButton sc={screenDim}
+              <LoginButton
                 onClick={() => this.confirmNote()}>
                 Ok
               </LoginButton>
             </LoginPassword>
           </LoginFormOpaque>
-          <LoginFormOpaque sc={screenDim} visible={this.state.loginVisible}>
+          <LoginFormOpaque visible={this.state.loginVisible}>
             <br/>
             <LoginHeading>
-              <LoginHeadingImg src={heading} sc={screenDim}/>
+              <LoginHeadingImg src={heading}/>
             </LoginHeading>
             <br/>
             <LoginPassword>
               Set New 8-Digit Password
               <br/>
               <LoginInput
-                sc={screenDim}
+
                 type="password"
                 value={this.state.newPassword}
                 onChange={e => {
@@ -161,29 +158,30 @@ class SetPasswordPage extends React.Component {
               Confirm Password
               <br/>
               <LoginInput
-                sc={screenDim}
+
                 type="password"
                 value={this.state.confirmPassword}
                 onChange={e => this.setConfirmPassword(e.target.value)} />
               <br/><br/>
               {loginbutton}
+              <br/><br/><br/>
+              {'ZeroVerse 2.0.0'}
             </LoginPassword>
-            <br/><br/>
-            <LoginSocialContainer sc={screenDim}>
+            <LoginSocialContainer>
               <a href="https://www.zerocurrency.io">
-                <LoginSocial src={zerologo} sc={screenDim}/>
+                <LoginSocial src={zerologo}/>
               </a>
               <a href="https://github.com/zerocurrency">
-                <LoginSocial src={github} sc={screenDim}/>
+                <LoginSocial src={github}/>
               </a>
               <a href="https://twitter.com/ZeroCurrencies">
-                <LoginSocial src={twitter} sc={screenDim}/>
+                <LoginSocial src={twitter}/>
               </a>
               <a href="https://t.me/zerocurrency">
-                <LoginSocial src={telegram} sc={screenDim}/>
+                <LoginSocial src={telegram}/>
               </a>
               <a href="https://discordapp.com/invite/Jq5knn5">
-                <LoginSocial src={discord} sc={screenDim}/>
+                <LoginSocial src={discord}/>
               </a>
             </LoginSocialContainer>
           </LoginFormOpaque>

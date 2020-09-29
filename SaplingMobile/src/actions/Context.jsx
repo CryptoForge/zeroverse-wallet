@@ -1,29 +1,22 @@
-export const SET_ACTIVE_TYPE = 'SET_CURRENT_ACTIVE_TYPE'
 export const SET_ACTIVE_PASSWORD = 'SET_CURRENT_ACTIVE_PASSWORD'
-export const SET_T_ADDRESS = 'SET_CURRENT_T_ADDRESS'
-export const SET_T_PRIVATE_KEY = 'SET_CURRENT_T_PRIVATE_KEY'
-export const SET_T_BALANCE = 'SET_CURRENT_T_BALANCE'
-export const SET_Z_ADDRESS = 'SET_CURRENT_Z_ADDRESS'
-export const SET_Z_PRIVATE_KEY = 'SET_CURRENT_Z_PRIVATE_KEY'
-export const SET_Z_HEIGHT = 'SET_CURRENT_Z_HEIGHT'
-export const SET_Z_SYNCED = 'SET_CURRENT_Z_SYNCED'
-export const SET_Z_BALANCE = 'SET_CURRENT_Z_BALANCE'
-export const SET_SAPLING_OUTPUT_VERIFIED = 'SET_CURRENT_SAPLING_OUTPUT_VERIFIED'
-export const SET_SAPLING_SPEND_VERIFIED = 'SET_CURRENT_SAPLING_SPEND_VERIFIED'
+export const SET_ADDRESS = 'SET_CURRENT_ADDRESS'
+export const SET_PRIVATE_KEY = 'SET_CURRENT_PRIVATE_KEY'
+export const SET_HEIGHT = 'SET_CURRENT_HEIGHT'
+export const SET_SYNCED = 'SET_CURRENT_SYNCED'
+export const SET_BALANCE = 'SET_CURRENT_BALANCE'
 export const SET_DIMENSIONS = 'SET_CURRENT_DIMENSIONS'
-export const SET_ZER_IN_BTC_VALUE = 'SET_ZER_IN_BTC_VALUE'
-export const SET_ZER_IN_CURRENCY_VALUE = 'SET_ZER_IN_CURRENCY_VALUE'
-export const SET_DB = 'SET_CURRENT_DB'
-export const SET_REINDEX = 'SET_CURRENT_REINDEX'
-export const SET_QR_SCANNING = 'SET_QR_SCANNING'
-
-
-export function setActiveType (activeType) {
-  return {
-    type: SET_ACTIVE_TYPE,
-    activeType
-  }
-}
+export const SET_ZER_IN_BTC_VALUE = 'SET_CURRENT_ZER_IN_BTC_VALUE'
+export const SET_ZER_IN_CURRENCY_VALUE = 'SET_CURRENT_ZER_IN_CURRENCY_VALUE'
+export const SET_QR_SCANNING = 'SET_CURRENT_QR_SCANNING'
+export const SET_SAVING = 'SET_CURRENT_SAVING'
+export const SET_WALLET_INUSE = 'SET_CURRENT_WALLET_INUSE'
+export const SET_SELECT_COIN = 'SET_CURRENT_SELECT_COIN'
+export const SET_WALLET_LOADED = 'SET_CURRENT_WALLET_LOADED'
+export const SET_REINDEX_WALLET = 'SET_CURRENT_REINDEX_WALLET'
+export const SET_REFRESH_ADDRESS = 'SET_CURRENT_REFRESH_ADDRESS'
+export const SET_TADDRESSES = 'SET_CURRENT_TADDRESSES'
+export const SET_ZADDRESSES = 'SET_CURRENT_ZADDRESSES'
+export const SET_TX = 'SET_CURRENT_TX'
 
 export function setActivePassword (activePassword) {
   return {
@@ -32,73 +25,38 @@ export function setActivePassword (activePassword) {
   }
 }
 
-export function setTAddress (tAddress) {
+export function setAddress (address) {
   return {
-    type: SET_T_ADDRESS,
-    tAddress
+    type: SET_ADDRESS,
+    address
   }
 }
 
-export function setTPrivateKey (tPrivateKey) {
+export function setPrivateKey (privateKey) {
   return {
-    type: SET_T_PRIVATE_KEY,
-    tPrivateKey
+    type: SET_PRIVATE_KEY,
+    privateKey
   }
 }
 
-export function setTBalance (tBalance) {
+export function setHeight(height) {
   return {
-    type: SET_T_BALANCE,
-    tBalance
+    type: SET_HEIGHT,
+    height
   }
 }
 
-export function setZAddress (zAddress) {
+export function setSynced(synced) {
   return {
-    type: SET_Z_ADDRESS,
-    zAddress
+    type: SET_SYNCED,
+    synced
   }
 }
 
-export function setZPrivateKey (zPrivateKey) {
+export function setBalance (balance) {
   return {
-    type: SET_Z_PRIVATE_KEY,
-    zPrivateKey
-  }
-}
-
-export function setZHeight(zHeight) {
-  return {
-    type: SET_Z_HEIGHT,
-    zHeight
-  }
-}
-
-export function setZSynced(zSynced) {
-  return {
-    type: SET_Z_SYNCED,
-    zSynced
-  }
-}
-
-export function setZBalance (zBalance) {
-  return {
-    type: SET_Z_BALANCE,
-    zBalance
-  }
-}
-
-export function setSaplingOutputVerified (saplingoutputverified) {
-  return {
-    type: SET_SAPLING_OUTPUT_VERIFIED,
-    saplingoutputverified
-  }
-}
-
-export function setSaplingSpendVerified (saplingspendverified) {
-  return {
-    type: SET_SAPLING_SPEND_VERIFIED,
-    saplingspendverified
+    type: SET_BALANCE,
+    balance
   }
 }
 
@@ -123,30 +81,72 @@ export function setZerInCurrencyValue (currencyValue) {
   }
 }
 
-export function setDB (db) {
-  return {
-    type: SET_DB,
-    db
-  }
-}
-
-export function setReindex (reindex) {
-  return {
-    type: SET_REINDEX,
-    reindex
-  }
-}
-
-// export function setCurrentCoin (currentCoin) {
-//   return {
-//     type: SET_CURRENT_COIN,
-//     currentCoin
-//   }
-// }
-
 export function setQrScanning (qrScanning) {
   return {
     type: SET_QR_SCANNING,
     qrScanning
+  }
+}
+
+export function setSaving (saving) {
+  return {
+    type: SET_SAVING,
+    saving
+  }
+}
+
+export function setWalletInUse (walletInUse) {
+  return {
+    type: SET_WALLET_INUSE,
+    walletInUse
+  }
+}
+
+export function setSelectCoin (selectCoin) {
+  return {
+    type: SET_SELECT_COIN,
+    selectCoin
+  }
+}
+
+export function setWalletLoaded (walletLoaded) {
+  return {
+    type: SET_WALLET_LOADED,
+    walletLoaded
+  }
+}
+
+export function setReindexWallet (reindexWallet) {
+  return {
+    type: SET_REINDEX_WALLET,
+    reindexWallet
+  }
+}
+
+export function setRefreshAddresses (refreshAddresses) {
+  return {
+    type: SET_REFRESH_ADDRESS,
+    refreshAddresses
+  }
+}
+
+export function setTAddresses (tAddresses) {
+  return {
+    type: SET_TADDRESSES,
+    tAddresses
+  }
+}
+
+export function setZAddresses (zAddresses) {
+  return {
+    type: SET_ZADDRESSES,
+    zAddresses
+  }
+}
+
+export function setTx (tx) {
+  return {
+    type: SET_TX,
+    tx
   }
 }

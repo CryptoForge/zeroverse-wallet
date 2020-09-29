@@ -1,22 +1,15 @@
-export const SET_SUB_PAGE_ZMAIN = 'SET_CURRENT_SUB_PAGE_ZMAIN'
-export const SET_SUB_PAGE_TMAIN = 'SET_CURRENT_SUB_PAGE_TMAIN'
+export const SET_SUB_PAGE_MAIN = 'SET_CURRENT_SUB_PAGE_MAIN'
 export const SET_SUB_PAGE_SEND = 'SET_CURRENT_SUB_PAGE_SEND'
 export const SET_SUB_PAGE_RECEIVE = 'SET_CURRENT_SUB_PAGE_RECEIVE'
 export const SET_SUB_PAGE_PRIVATE_KEY = 'SET_CURRENT_SUB_PAGE_PRIVATE_KEY'
-export const SET_SUB_PAGE_PASSPHRASE = 'SET_CURRENT_SUB_PAGE_PASSPHRASE'
-export const SET_SUB_PAGE_REINDEX = 'SET_CURRENT_SUB_PAGE_REINDEX'
+export const SET_SUB_PAGE_SEED = 'SET_CURRENT_SUB_PAGE_SEED'
+export const SET_SUB_PAGE_TX = 'SET_CURRENT_SUB_PAGE_TX'
+export const SET_SUB_PAGE_ADDRESSLIST = 'SET_CURRENT_SUB_PAGE_ADDRESSLIST'
 
-export function setZMainPage (zmainPage) {
+export function setMainPage (mainPage) {
   return {
-    type: SET_SUB_PAGE_ZMAIN,
-    zmainPage
-  }
-}
-
-export function setTMainPage (tmainPage) {
-  return {
-    type: SET_SUB_PAGE_TMAIN,
-    tmainPage
+    type: SET_SUB_PAGE_MAIN,
+    mainPage
   }
 }
 
@@ -41,16 +34,23 @@ export function setPrivateKeyPage (privateKeyPage) {
   }
 }
 
-export function setPassPhrasePage (passPhrasePage) {
+export function setSeedPage (seedPage) {
   return {
-    type: SET_SUB_PAGE_PASSPHRASE,
-    passPhrasePage
+    type: SET_SUB_PAGE_SEED,
+    seedPage
   }
 }
 
-export function setReindexPage (reindexPage) {
+export function setTxPage (txPage) {
   return {
-    type: SET_SUB_PAGE_REINDEX,
-    reindexPage
+    type: SET_SUB_PAGE_TX,
+    txPage
+  }
+}
+
+export function setAddressList (addressList) {
+  return {
+    type: SET_SUB_PAGE_ADDRESSLIST,
+    addressList
   }
 }
