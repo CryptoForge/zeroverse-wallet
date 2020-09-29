@@ -1,92 +1,105 @@
 import zeroLogo from '../assets/logo-white.png'
+import zeroQrLogo from '../assets/logo-white-QR.png'
+import arrowLogo from '../assets/arrow/logo.png'
+import arrowQrLogo from '../assets/arrow/qrlogo.png'
+import snowgemLogo from '../assets/snowgem/logo.png'
+import snowgemQrLogo from '../assets/snowgem/qrlogo.png'
+import pirateLogo from '../assets/pirate/logo.svg'
+import pirateQrLogo from '../assets/pirate/qrlogo.svg'
 
 export const coins = {
-  zcash: {
-    networkname: 'zec',
-    icon: '',
-    api: [],
-    explorer: [],
-    messagePrefix: '\x18ZCash Signed Message:\n',
-    bech32: 'bc',
-    bip32: {
-      public: 0x0488b21e,
-      private: 0x0488ade4
-    },
-    pubKeyHash: 0x1cb8,
-    scriptHash: 0x1cbd,
-    wif: 0x80,
-    branchHeight: {
-      1: 0,
-      2: 1,
-      3: 492850,
-      4: 695000
-    },
-    consensusBranchId: {
-      1: 0x00,
-      2: 0x00,
-      3: 0x5ba81b19,
-      4: 0x76b809bb
-    }
-  },
   zero: {
     networkname: 'zer',
+    coinGeckoId: 'zero',
     icon: zeroLogo,
-    api: ['https://zersapling1.zeromachine.io/',
-          'https://zersapling2.zeromachine.io/',
-          'https://zersapling3.zeromachine.io/'],
-    zmq: ['http://zersapling1.zeromachine.io:3001/',
-          'http://zersapling2.zeromachine.io:3002/',
-          'http://zersapling3.zeromachine.io:3003/'],
+    qrlogo: zeroQrLogo,
     explorer: ['https://zersapling1.zeromachine.io/insight/',
                'https://zersapling2.zeromachine.io/insight/',
                'https://zersapling3.zeromachine.io/insight/'],
-    messagePrefix: '\x18Zero Signed Message:\n',
-    bech32: 'bc',
-    bip32: {
-      public: 0x0488b21e,
-      private: 0x0488ade4
+    litewallet: ['https://lightwalletd.zeromachine.io:443'],
+    tEnabled: true,
+    addressParams: {
+      coin_type: '323',
+      hrp_sapling_extended_spending_key: 'secret-extended-key-main',
+      hrp_sapling_extended_full_viewing_key: 'zviews',
+      hrp_sapling_payment_address: 'zs',
+      b58_pubkey_address_prefix: '1cb8',
+      b58_script_address_prefix: '1cbd',
     },
-    pubKeyHash: 0x1cb8,
-    scriptHash: 0x1cbd,
-    wif: 0x80,
     branchHeight: {
       default: 0,
       unused: 1,
       overwinter: 492850,
       sapling: 492850
-    },
-    consensusBranchId: {
-      default: 0x00,
-      unused: 0x00,
-      overwinter: 0x5ba81b19,
-      sapling: 0x76b809bb
     }
   },
   arrow: {
     networkname: 'arw',
-    icon: '',
-    api: [],
-    explorer: [],
-    messagePrefix: '\x18ZCash Signed Message:\n',
-    bech32: 'bc',
-    bip32: {
-      public: 0x0488b21e,
-      private: 0x0488ade4
+    coinGeckoId: 'arrow',
+    icon: arrowLogo,
+    qrlogo: arrowQrLogo,
+    explorer: ['http://explorer.arrowchain.net/'],
+    litewallet: ['https://lightwalletarw.zeromachine.io:443'],
+    tEnabled: false,
+    addressParams: {
+      coin_type: '350',
+      hrp_sapling_extended_spending_key: 'secret-extended-key-main',
+      hrp_sapling_extended_full_viewing_key: 'aviews',
+      hrp_sapling_payment_address: 'as',
+      b58_pubkey_address_prefix: '130f',
+      b58_script_address_prefix: '131b',
     },
-    pubKeyHash: 0x1cb8,
-    scriptHash: 0x1cbd,
-    wif: 0x80,
     branchHeight: {
-      1: 0,
-      2: 1,
-      3: 492850,
-      4: 492850
+      default: 0,
+      unused: 0,
+      overwinter: 0,
+      sapling: 1
+    }
+  },
+  snowgem: {
+    networkname: 'xsg',
+    coinGeckoId: 'snowgem',
+    icon: snowgemLogo,
+    qrlogo: snowgemQrLogo,
+    explorer: ['https://explorer.snowgem.org/'],
+    litewallet: ['https://lightwalletxsg.zeromachine.io:443'],
+    tEnabled: true,
+    addressParams: {
+      coin_type: '407',
+      hrp_sapling_extended_spending_key: 'secret-extended-key-main',
+      hrp_sapling_extended_full_viewing_key: 'zviews',
+      hrp_sapling_payment_address: 'zs',
+      b58_pubkey_address_prefix: '1c28',
+      b58_script_address_prefix: '1c2d',
     },
-    consensusBranchId: {
-      1: 0x00,
-      2: 0x00,
-      3: 0x5ba81b19,
-      4: 0x76b809bb
+    branchHeight: {
+      default: 0,
+      unused: 0,
+      overwinter: 0,
+      sapling: 1
+    }
+  },
+  pirate: {
+    networkname: 'arrr',
+    coinGeckoId: 'pirate-chain',
+    icon: pirateLogo,
+    qrlogo: pirateQrLogo,
+    explorer: ['https://explorer.pirate.black/'],
+    litewallet: ['https://lightd.pirate.black:443/'],
+    tEnabled: false,
+    addressParams: {
+      coin_type: '141',
+      hrp_sapling_extended_spending_key: 'secret-extended-key-main',
+      hrp_sapling_extended_full_viewing_key: 'zviews',
+      hrp_sapling_payment_address: 'zs',
+      b58_pubkey_address_prefix: '1cb8',
+      b58_script_address_prefix: '1cbd',
+    },
+    branchHeight: {
+      default: 0,
+      unused: 0,
+      overwinter: 0,
+      sapling: 1
     }
   }
 }

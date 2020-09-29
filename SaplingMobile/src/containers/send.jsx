@@ -4,38 +4,22 @@ import PropTypes from 'prop-types'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 
-import axios from 'axios'
-import { openRecordset }  from '../database/sqlite'
-import { apiBuildTransaction } from '../utils/sapling'
-import {
-  getBaseDirectoryEntry,
-  getDirectoryEntry,
-  getFileEntry,
-  writeDataToFile} from '../utils/fileops'
+import {setMainPage,setSendPage} from '../actions/MainSubPage'
+import {setQrScanning} from '../actions/Context'
+import {setProcessTime} from '../actions/Settings'
 
-import {
-  setTMainPage,
-  setZMainPage,
-  setSendPage} from '../actions/MainSubPage'
+import { send } from '../utils/litewallet'
 
-import {
-  setActiveType,
-  setQrScanning} from '../actions/Context'
-
-import {
-  setNoteInputs,
-  setProcessTime} from '../actions/Settings'
-
+import AddressDropdown from '../containers/addressdropdown'
 import RingSpinner from '../containers/spinner'
 
 import {
-  SendGrid,
+  SendDiv,
+  SendPageTitle,
+  SendSectionOverScroll,
   SendSection,
   AddressSelectSection,
-  AddressSelectLabel,
   AddressSelectHeading,
-  AddressToggleButton,
-  ConfirmHeading,
   ConfirmDataSection,
   ConfirmData,
   ConfirmButtonSection,
@@ -44,20 +28,23 @@ import {
   ConfirmPin,
   ConfirmPassword,
   ConfirmPasswordSection,
-  SendSectionOpaque,
   SendAddress,
   SendAddressSection,
   AmountSection,
   AmountInput,
   FeeSection,
-  ButtonSection,
-  QRButton,
+  MemoSection,
+  MemoArea,
+  ButtonTopSection,
+  ButtonBottomSection,
+  SendOkButton,
+  SendCancelButton,
+  SendQrButton,
   TransactionLink,
   AddressBalanceNumberDiv,
   AddressCurrencyDiv,
   SpinnerSection} from '../components/send'
 
-import { GreyButton } from '../components/button'
 
 class Send extends React.Component {
 
@@ -68,6 +55,7 @@ class Send extends React.Component {
       sendToAddress: '',
       fee: 0.0001,
       amount: 0.0000,
+      memo: '',
       spendPath: '',
       outputPath: '',
       transactionInput: 'visible',
@@ -86,7 +74,10 @@ class Send extends React.Component {
 
     }
 
+    this.scrollRef = React.createRef()
+
     //State Updates
+    this.setMemo = this.setMemo.bind(this)
     this.setSendToAddress = this.setSendToAddress.bind(this)
     this.setFee = this.setFee.bind(this)
     this.setAmount = this.setAmount.bind(this)
@@ -115,9 +106,11 @@ class Send extends React.Component {
     this.handleQRScan = this.handleQRScan.bind(this)
     this.getInputs = this.getInputs.bind(this)
     this.msToTime = this.msToTime.bind(this)
+    this.resetScroll = this.resetScroll.bind(this)
   }
 
     //State Updates
+    setMemo (s) {this.setState({memo: s})}
     setSendToAddress (s) {this.setState({sendToAddress: s})}
     setFee (s) {this.setState({fee: s})}
     setAmount (s) {this.setState({amount: s})}
@@ -219,249 +212,64 @@ class Send extends React.Component {
 
     async getInputs() {
 
-      var witnessRecords = await openRecordset(this.props.context.db,'SELECT Max(height) as height from Witnesses')
-      var witnessHeight = witnessRecords.rows.item(0).height
-      if (witnessHeight === null || isNaN(witnessHeight)) {
-        witnessHeight = 0
-      }
 
-      //var w = await openRecordset(this.props.context.db,'SELECT * from Wallet')
-
-      // var filesystem = await getBaseDirectoryEntry()
-      // var root_path = filesystem.root.nativeURL.replace("file://","")
-
-      //var directoryEntry = await getDirectoryEntry(filesystem, 'inputs')
-
-      // var txInputs = {
-      //     "spend_path" : root_path + "params/sapling-spend.params",
-      //     "output_path" : root_path + "params/sapling-output.params",
-      //     "data_path" : root_path + "inputs/",
-      //     "amount" : (this.state.amount*1e08).toString(),
-      //     "input_type" : "0",
-      //     "fee" : (this.state.fee*1e08).toString(),
-      //     "payment_address" : this.state.sendToAddress,
-      //     "height" : this.props.context.zHeight.toString(),
-      //     "PrivateKey" : this.props.context.tPrivateKey,
-      //     "extended_spending_key" : this.props.context.zPrivateKey
-      //   }
-
-        //var tFiles = {"filename" : []}
-        //var zFiles = {"filename" : []}
-
-        var totalAmount = Number(this.state.amount*1e08) + Number(this.state.fee*1e08)
-        var unspentTotal = 0
-        //var noteHeight = 0
-        var txInputs = []
-
-        if (this.props.context.activeType == 'Z') {
-          var notesRecords = await openRecordset(this.props.context.db,'SELECT i.value, i.cmu, i.ephemeralKey, i.encCiphertext, w.witness '
-                                                              + 'FROM Wallet as i '
-                                                              + 'JOIN Witnesses as w on i.cmu = w.cmu '
-                                                              + 'WHERE w.height = ' + (witnessHeight).toString() + ' and i.spent = 0 '
-                                                              + 'ORDER BY i.height ASC')
-
-            //Attampt Decryption of new transactions
-          for (var n = 0; n < notesRecords.rows.length; n++) {
-            if (notesRecords.rows.item(n).value != null) {
-
-                if (unspentTotal < totalAmount) {
-                  //var zFileInputs = {"z_inputs": []}
-
-                  unspentTotal += Number(notesRecords.rows.item(n).value)
-
-                  var txNotes = {
-                      "witness" : notesRecords.rows.item(n).witness,
-                      "cmu" : notesRecords.rows.item(n).cmu,
-                      "ephemeralKey" : notesRecords.rows.item(n).ephemeralKey,
-                      "encCiphertext" : notesRecords.rows.item(n).encCiphertext
-                  }
-                  txInputs.push(txNotes)
-
-                }
-              }
-            }
-          }
-
-      //console.log(txInputs.length)
-      this.setNoteQty(txInputs.length)
-      this.setEstimatedBuildTime((this.state.noteQty * (this.props.settings.processTime/this.props.settings.noteInputs)))
-
-      // console.log(this.state.noteQty)
-      // console.log(this.props.settings.processTime)
-      // console.log(this.props.settings.noteInputs)
     }
 
     async createSpend() {
       this.setBuilding(true)
 
-      const status = await axios.get(this.props.settings.insightAPI + 'insight-api-zero/status')
-      const blockHeight = status.data.info.blocks
 
 
-      var witnessRecords = await openRecordset(this.props.context.db,'SELECT Max(height) as height from Witnesses')
-      var witnessHeight = witnessRecords.rows.item(0).height
-      if (witnessHeight === null || isNaN(witnessHeight)) {
-        witnessHeight = 0
+
+      var start = Date.now()
+      this.setStart(start)
+      this.buildTimer()
+
+      var sendtx = {
+        input: this.props.context.address,
+        fee: parseInt(this.state.fee * 1e08),
+        output: [],
       }
+      sendtx.output.push({
+        address: this.state.sendToAddress,
+        amount: parseInt(this.state.amount * 1e08),
+        memo: this.state.memo
+      })
 
-      //var w = await openRecordset(this.props.context.db,'SELECT * from Wallet')
+      sendtx = JSON.stringify(sendtx)
 
-      var filesystem = await getBaseDirectoryEntry()
-      var root_path = filesystem.root.nativeURL.replace("file://","")
+      console.log(sendtx)
 
-      var directoryEntry = await getDirectoryEntry(filesystem, 'inputs')
+      var tx = await send(sendtx)
+      console.log(tx)
 
-      var txInputs = {
-          "spend_path" : root_path + "params/sapling-spend.params",
-          "output_path" : root_path + "params/sapling-output.params",
-          "data_path" : root_path + "inputs/",
-          "amount" : (this.state.amount*1e08).toString(),
-          "input_type" : "0",
-          "fee" : (this.state.fee*1e08).toString(),
-          "payment_address" : this.state.sendToAddress,
-          "height" : blockHeight.toString(),
-          "PrivateKey" : this.props.context.tPrivateKey,
-          "extended_spending_key" : this.props.context.zPrivateKey
-        }
+      var processingTime = Date.now() - start
+      this.setActualBuildTime(processingTime)
+      this.clearBuildTimer()
+      this.setShowButtons(true)
+      this.setBuilding(false)
 
-        var tFiles = {"filename" : []}
-        var zFiles = {"filename" : []}
-
-        var totalAmount = Number(txInputs.amount) + Number(txInputs.fee)
-        var unspentTotal = 0
-        //var noteHeight = 0
-
-
-        if (this.props.context.activeType == 'Z') {
-
-
-          var notesRecords = await openRecordset(this.props.context.db,'SELECT i.value, i.cmu, i.ephemeralKey, i.encCiphertext, w.witness '
-                                                              + 'FROM Wallet as i '
-                                                              + 'JOIN Witnesses as w on i.cmu = w.cmu '
-                                                              + 'WHERE w.height = ' + (witnessHeight).toString() + ' and i.spent = 0 '
-                                                              + 'ORDER BY i.height ASC')
-
-            //Attampt Decryption of new transactions
-          for (var n = 0; n < notesRecords.rows.length; n++) {
-            if (notesRecords.rows.item(n).value != null) {
-
-                if (unspentTotal < totalAmount) {
-                  var zFileInputs = {"z_inputs": []}
-
-                  unspentTotal += Number(notesRecords.rows.item(n).value)
-
-                  var txNotes = {
-                      "witness" : notesRecords.rows.item(n).witness,
-                      "cmu" : notesRecords.rows.item(n).cmu,
-                      "ephemeralKey" : notesRecords.rows.item(n).ephemeralKey,
-                      "encCiphertext" : notesRecords.rows.item(n).encCiphertext
-                  }
-                  // console.log(txNotes)
-                   zFileInputs.z_inputs.push(txNotes)
-                   var zFileName = "zinputs" + n + ".json"
-                   zFiles.filename.push(zFileName)
-                   var zData = JSON.stringify(zFileInputs)
-                   var zFileEntry = await getFileEntry(directoryEntry, zFileName)
-                   await writeDataToFile(zFileEntry, zData)
-
-                }
-              }
-            }
-            txInputs.input_type = "1"
-          }
-
-        if (this.props.context.activeType == 'T') {
-          var response = await axios.get(this.props.settings.insightAPI + 'insight-api-zero/addr/' + this.props.context.tAddress + '/utxo')
-          for (var i = 0; i < response.data.length; i++) {
-            if (unspentTotal < totalAmount) {
-              if (response.data[i].confirmations > 0 ) {
-                var tFileInputs = {
-                  "t_inputs": []
-                }
-
-                unspentTotal += Number(response.data[i].satoshis)
-
-                var utxo = {
-                  "txid": response.data[i].txid,
-                  "vout": response.data[i].vout.toString(),
-                  "satoshis": response.data[i].satoshis.toString(),
-                  "scriptPubKey": response.data[i].scriptPubKey
-                }
-                 // console.log(utxo)
-                 tFileInputs.t_inputs.push(utxo)
-                 var tFileName = "tinputs" + i + ".json"
-                 tFiles.filename.push(tFileName)
-                 var tData = JSON.stringify(tFileInputs)
-                 var tFileEntry = await getFileEntry(directoryEntry, tFileName)
-                 await writeDataToFile(tFileEntry, tData)
-               }
-            }
-          }
-          txInputs.input_type = "0"
-        }
-
-
-        // console.log(unspentTotal)
-        // console.log(totalAmount)
-
-        if ( unspentTotal >= totalAmount) {
-
-          var tIn = JSON.stringify(tFiles)
-          var zIn = JSON.stringify(zFiles)
-          var txIn = JSON.stringify(txInputs)
-
-          var start = Date.now()
-          this.setStart(start)
-          this.buildTimer()
-
-          var saplingtx = await apiBuildTransaction(txIn, tIn, zIn)
-          var processingTime = Date.now() - start
-          this.setActualBuildTime(processingTime)
-          this.clearBuildTimer()
-          this.setShowButtons(true)
-          this.setBuilding(false)
-
-          var tx = JSON.parse(saplingtx)
-
-          if (tx.error == "false") {
-            try{
-              this.props.setProcessTime(processingTime + this.props.settings.processTime)
-              this.props.setNoteInputs(this.state.noteQty + this.props.settings.noteInputs)
-              var sendtx = await axios.post(this.props.settings.insightAPI + 'insight-api-zero/tx/send',
-                      {
-                        rawtx: tx.result
-                      },
-                      {
-                        headers: {
-                          'Content-Type': 'application/json'
-                        }
-                      })
-              if (sendtx.status == 200) {
-                this.setTransactionSuccess(true)
-                this.setTxid(sendtx.data.txid)
-              } else {
-                alert('Transaction send failed!! ')
-                this.setTransactionFailed(true)
-              }
-            } catch (err) {
-              //console.log(err)
-              alert('Transaction send failed!! ' + err)
-              this.setTransactionFailed(true)
-            }
-          } else {
-            this.setTransactionFailed(true)
-            alert('Tx build failure! ' + tx.result)
-          }
+      try {
+        var ptx = JSON.parse(tx)
+        if (ptx.txid != null) {
+          this.setTransactionSuccess(true)
+          this.setTxid(ptx.txid)
         } else {
           this.setTransactionFailed(true)
-          alert('Not enough coins!')
+          alert('Tx build failure! ' + ptx.error)
         }
+      } catch {
+        this.setTransactionFailed(true)
+        alert('Tx build failure! ' + tx)
+      }
+
       this.setShowButtons(true)
       this.setBuilding(false)
     }
 
     resetSpend() {
       this.setSendToAddress('')
+      this.setMemo('')
       this.setFee(0.0001)
       this.setAmount(0)
       this.setPassword('')
@@ -472,6 +280,7 @@ class Send extends React.Component {
       this.setShowButtons(false)
       this.setBuilding(false)
       this.setActualBuildTime(0)
+      this.resetScroll(0)
     }
 
     buildTimer() {
@@ -497,6 +306,11 @@ class Send extends React.Component {
       return hours + ":" + minutes + ":" + seconds + "." + milliseconds;
     }
 
+    resetScroll (p) {
+      this.scrollRef.current.scrollTop = p
+    }
+
+
     componentDidMount() {
     }
 
@@ -505,39 +319,10 @@ class Send extends React.Component {
       this.clearBuildTimer()
     }
 
+
+
     render () {
-        var screenDim = this.props.context.dimensions
-        var taddress = this.props.context.tAddress
-        var zaddress = this.props.context.zAddress
-
-        var displayT
-        var displayZ
-        if (this.props.context.activeType == 'Z' ) {
-          displayZ = 'visible'
-          displayT = 'none'
-        } else if (this.props.context.activeType == 'T' ) {
-          displayZ = 'none'
-          displayT = 'visible'
-        }
-
-        var displayToggleButton
-        if (this.props.context.zSynced == true) {
-          displayToggleButton = <AddressToggleButton sc={screenDim}
-            onClick={() => {
-              if (this.props.context.activeType == 'Z') {
-                this.props.setActiveType('T')
-              } else {
-                this.props.setActiveType('Z')
-              }
-              }}>
-            T/Z
-          </AddressToggleButton>
-        } else {
-          displayToggleButton = <AddressToggleButton disabled = {true} sc={screenDim}>
-            T/Z
-          </AddressToggleButton>
-        }
-
+        var address = this.props.context.address
 
         var displaySendButton
         var displaySendPassword
@@ -569,238 +354,235 @@ class Send extends React.Component {
         var sendButton
         if (this.state.validPassword == true) {
           displaySendPassword = 'none'
-          sendButton = <ConfirmSendButton sc={screenDim}
+          sendButton = <ConfirmSendButton
                           onClick={() => {
+                            this.resetScroll(0)
                             this.setShowButtons(false)
                             this.createSpend()}}>
                           Send
                         </ConfirmSendButton>
         } else {
-          sendButton = <ConfirmSendButton sc={screenDim} disabled = {true}>
+          sendButton = <ConfirmSendButton disabled = {true}>
                         Send
                         </ConfirmSendButton>
         }
 
-        var preSendButton
+        var preSendButton = <SendOkButton  disabled = {true}>Send</SendOkButton>
+
         if (this.state.amount > 0) {
-            preSendButton = <GreyButton sc={screenDim}
-            onClick={() => {
-              this.setTransactionConfirm('visible')
-              this.setTransactionInput('none')
-              this.getInputs()
-            }}>
-            Send
-          </GreyButton>
+          var addrBal = this.props.context.balance / 1e08
+          var sendAmt = parseFloat(this.state.amount) + parseFloat(this.state.fee)
+          if (addrBal >= sendAmt) {
+            preSendButton = <SendOkButton
+                onClick={() => {
+                  this.resetScroll(0)
+                  this.setTransactionConfirm('visible')
+                  this.setTransactionInput('none')
+                  this.getInputs()
+                }}>
+                Send
+              </SendOkButton>
+          }
+        }
+
+
+        var addressListDisplay
+        if (this.props.mainSubPage.addressList == 'none') {
+          addressListDisplay = {display: 'none'}
         } else {
-          preSendButton = <GreyButton sc={screenDim}  disabled = {true}>
-            Send
-          </GreyButton>
+          addressListDisplay = {}
         }
 
         return (
-          <SendGrid sc={screenDim} visible={this.props.mainSubPage.sendPage}>
-          <SendSection sc={screenDim}>
-          </SendSection>
+          <SendDiv visible={this.props.mainSubPage.sendPage}>
+            <SendSectionOverScroll ref = {this.scrollRef}>
 
-          <SendSectionOpaque sc={screenDim} visible={this.state.transactionConfirm}>
-            <ConfirmHeading sc={screenDim}>
-              {"Confirm Transaction"}
-            </ConfirmHeading>
-            <ConfirmDataSection sc={screenDim}>
+              <SendSection visible={this.state.transactionConfirm}>
+                <SendPageTitle>
+                  {"Confirm Transaction"}
+                </SendPageTitle>
 
+                <ConfirmDataSection>
+                  <ConfirmData>
+                    {'Send from Address:'}
+                  </ConfirmData>
 
-              <ConfirmData sc={screenDim}>
-                {'Send from Address:'}
-              </ConfirmData>
+                  <ConfirmData>
+                    {address}
+                  </ConfirmData>
 
-              <ConfirmData sc={screenDim}>
-                {this.props.context.activeType == 'Z' ? zaddress : taddress}
-              </ConfirmData>
-
-              <br/>
-
-              <ConfirmData sc={screenDim}>
-                {'Send to Address:'}
-              </ConfirmData>
-
-              <ConfirmData sc={screenDim}>
-                {this.state.sendToAddress}
-              </ConfirmData>
-
-              <br/>
-
-              <ConfirmData sc={screenDim}>
-                {'Amount: ' + (this.state.amount/1.0).toFixed(8)}
-              </ConfirmData>
-              <ConfirmData sc={screenDim}>
-                {'Fee: ' + (this.state.fee/1.0).toFixed(8)}
-              </ConfirmData>
-
-              <br/>
-
-              <ConfirmData sc={screenDim}>
-                {'Estimated build time: ' + this.msToTime(this.state.estimatedBuildTime)}
-              </ConfirmData>
-              <ConfirmPasswordSection visible={'visible'}>
-                <ConfirmData sc={screenDim}>
-                  {'Actual build time: ' + this.msToTime(this.state.actualBuildTime)}
-                </ConfirmData>
-              </ConfirmPasswordSection>
-
-
-              <ConfirmPasswordSection visible={displaySendPassword}>
-                <ConfirmPassword>
-                  Enter 8-Digit Pin to Send
                   <br/>
-                  <ConfirmPin
-                    sc={screenDim}
-                    type="password"
-                    value={this.state.password}
-                    onChange={e => this.setPassword(e.target.value)} />
-                </ConfirmPassword>
-              </ConfirmPasswordSection>
-              <ConfirmPasswordSection visible={displaySendButton}>
-                <br/>
-                <ConfirmButtonSection sc={screenDim}>
-                  {sendButton}
-                  <ConfirmCancelButton sc={screenDim}
-                  onClick={() => {
-                    this.setTransactionConfirm('none')
-                    this.setTransactionInput('visible')
-                    this.setTransactionFailed(false)
-                    this.setPassword('')
-                    this.setValidPassword(false)
-                  }}>
-                  Cancel
-                  </ConfirmCancelButton>
-                </ConfirmButtonSection>
-              </ConfirmPasswordSection>
 
+                  <ConfirmData>
+                    {'Send to Address:'}
+                  </ConfirmData>
 
-              <ConfirmPasswordSection visible={displayConfirm}>
-                <br/>
-                <TransactionLink sc={screenDim} href={this.props.settings.insightAPI + 'insight/tx/' + this.state.txid}>
-                  Show Completed Transaction
-                </TransactionLink>
-                <br/><br/><br/>
-                <ConfirmButtonSection sc={screenDim}>
-                  <ConfirmSendButton sc={screenDim}
-                  onClick={() => {
-                    this.resetSpend()
-                    this.setTransactionConfirm('none')
-                    this.setTransactionInput('visible')
-                  }}>
-                  New
-                  </ConfirmSendButton>
-                  <ConfirmCancelButton sc={screenDim}
-                  onClick={() => {
-                    this.resetSpend()
-                    this.setTransactionConfirm('none')
-                    this.setTransactionInput('visible')
-                    if (this.props.context.activeType == 'Z') {
-                      this.props.setZMainPage('visible')
-                    } else if (this.props.context.activeType == 'T') {
-                      this.props.setTMainPage('visible')
-                    }
-                    this.props.setSendPage('none')
-                  }}>
-                  Done
-                  </ConfirmCancelButton>
-                </ConfirmButtonSection>
-              </ConfirmPasswordSection>
-            </ConfirmDataSection>
-            <SpinnerSection sc={screenDim} visible = {displaySpinner}>
-              {spinner}
-            </SpinnerSection>
-          </SendSectionOpaque>
+                  <ConfirmData>
+                    {this.state.sendToAddress}
+                  </ConfirmData>
 
-
-
-
-
-          <SendSectionOpaque sc={screenDim} visible={this.state.transactionInput}>
-            <AddressSelectSection sc={screenDim}>
-
-
-              <AddressSelectLabel visible={displayZ} sc={screenDim}>
-                <AddressSelectHeading sc={screenDim}>
-                  {"Send from Private Address:"}
-                </AddressSelectHeading>
-                {zaddress.substring(0,8) + '...' + zaddress.substring(zaddress.length-8,zaddress.length)}
-                <AddressBalanceNumberDiv sc={screenDim}>
-                  {((this.props.context.zBalance / 1e08).toFixed(8)) + ' ' + this.props.settings.currentCoin}
-                </AddressBalanceNumberDiv>
-                <AddressCurrencyDiv sc={screenDim}>
-                  {((this.props.context.zBalance / 1e08) * this.props.context.BTCValue).toFixed(8) + ' BTC'}
                   <br/>
-                  {((this.props.context.zBalance / 1e08)  * this.props.context.currencyValue).toFixed(6) + ' USD'}
-                </AddressCurrencyDiv>
-              </AddressSelectLabel>
 
+                  <ConfirmData>
+                    {'Amount: ' + (this.state.amount/1.0).toFixed(8)}
+                  </ConfirmData>
+                  <ConfirmData>
+                    {'Fee: ' + (this.state.fee/1.0).toFixed(8)}
+                  </ConfirmData>
 
-              <AddressSelectLabel visible={displayT} sc={screenDim}>
-                <AddressSelectHeading sc={screenDim}>
-                  {"Send from Transparent Address:"}
-                </AddressSelectHeading>
-                  {taddress.substring(0,8) + '...' + taddress.substring(taddress.length-8,taddress.length)}
-                <AddressBalanceNumberDiv sc={screenDim}>
-                  {((this.props.context.tBalance / 1e08).toFixed(8))  + ' ' + this.props.settings.currentCoin}
-                </AddressBalanceNumberDiv>
-                <AddressCurrencyDiv sc={screenDim}>
-                  {((this.props.context.tBalance / 1e08) * this.props.context.BTCValue).toFixed(8) + ' BTC'}
                   <br/>
-                  {((this.props.context.tBalance / 1e08)  * this.props.context.currencyValue).toFixed(6) + ' USD'}
-                </AddressCurrencyDiv>
-              </AddressSelectLabel>
-              {displayToggleButton}
-            </AddressSelectSection>
+
+                  <ConfirmPasswordSection visible={'visible'}>
+                    <ConfirmData>
+                      {'Build time: ' + this.msToTime(this.state.actualBuildTime)}
+                    </ConfirmData>
+                  </ConfirmPasswordSection>
 
 
-            <SendAddressSection sc={screenDim}>
-              {"Send to Address:"}
-              <br/>
-              <SendAddress sc={screenDim}
-                value={this.state.sendToAddress}
-                onChange={e => this.setSendToAddress(e.target.value)}  />
-            </SendAddressSection>
-            <AmountSection sc={screenDim}>
-              {"Amount: "}
-              <AmountInput type="number" sc={screenDim}
-                value={this.state.amount}
-                onChange={e => this.setAmount(e.target.value)} />
-            </AmountSection>
-            <FeeSection sc={screenDim}>
-              {"Fee: "}
-              <AmountInput type="number" sc={screenDim}
-                value={this.state.fee}
-                onChange={e => this.setFee(e.target.value)} />
-            </FeeSection>
+                  <ConfirmPasswordSection visible={displaySendPassword}>
+                    <ConfirmPassword>
+                      Enter 8-Digit Pin to Send
+                      <br/>
+                      <ConfirmPin
 
-            <QRButton sc={screenDim}
-              onClick={() => {
-                this.handleQRScan()
-                }}>
-              QR
-            </QRButton>
+                        type="password"
+                        value={this.state.password}
+                        onChange={e => this.setPassword(e.target.value)} />
+                    </ConfirmPassword>
+                  </ConfirmPasswordSection>
+                  <ConfirmPasswordSection visible={displaySendButton}>
+                    <br/>
+                    <ConfirmButtonSection>
+                      {sendButton}
+                      <ConfirmCancelButton
+                      onClick={() => {
+                        this.setTransactionConfirm('none')
+                        this.setTransactionInput('visible')
+                        this.setTransactionFailed(false)
+                        this.setPassword('')
+                        this.setValidPassword(false)
+                      }}>
+                      Cancel
+                      </ConfirmCancelButton>
+                    </ConfirmButtonSection>
+                  </ConfirmPasswordSection>
 
-            <ButtonSection sc={screenDim}>
-              {preSendButton}
 
-              <GreyButton sc={screenDim}
-                onClick={() => {
-                  this.resetSpend()
-                  if (this.props.context.activeType == 'Z') {
-                    this.props.setZMainPage('visible')
-                  } else if (this.props.context.activeType == 'T') {
-                    this.props.setTMainPage('visible')
-                  }
-                  this.props.setSendPage('none')
-                  }}>
-                Cancel
-              </GreyButton>
-            </ButtonSection>
-          </SendSectionOpaque>
-          </SendGrid>
+                  <ConfirmPasswordSection visible={displayConfirm}>
+                    <br/>
+                    <TransactionLink href={this.props.settings.explorerURL + 'tx/' + this.state.txid}>
+                      Show Completed Transaction
+                    </TransactionLink>
+                    <br/><br/><br/>
+                    <ConfirmButtonSection>
+                      <ConfirmSendButton
+                      onClick={() => {
+                        this.resetSpend()
+                        this.setTransactionConfirm('none')
+                        this.setTransactionInput('visible')
+                      }}>
+                      New
+                      </ConfirmSendButton>
+                      <ConfirmCancelButton
+                      onClick={() => {
+                        this.resetSpend()
+                        this.setTransactionConfirm('none')
+                        this.setTransactionInput('visible')
+                        this.props.setMainPage('visible')
+                        this.props.setSendPage('none')
+                      }}>
+                      Done
+                      </ConfirmCancelButton>
+                    </ConfirmButtonSection>
+                  </ConfirmPasswordSection>
+                </ConfirmDataSection>
+                <SpinnerSection visible = {displaySpinner}>
+                  {spinner}
+                </SpinnerSection>
+              </SendSection>
+
+              <SendSection visible={this.state.transactionInput}>
+                <SendPageTitle>
+                  {'Create Transaction'}
+                </SendPageTitle>
+
+                <AddressSelectSection>
+                  <AddressSelectHeading>
+                    {"Select from Address:"}
+                  </AddressSelectHeading>
+                  <AddressDropdown />
+
+                  <div style = {addressListDisplay}>
+                    <br/>
+                    <AddressBalanceNumberDiv>
+                      {((this.props.context.balance / 1e08).toFixed(8)) + ' ' + this.props.settings.currentCoin}
+                    </AddressBalanceNumberDiv>
+                    <AddressCurrencyDiv>
+                      {((this.props.context.balance / 1e08) * this.props.context.BTCValue).toFixed(8) + ' BTC'}
+                      <br/>
+                      {((this.props.context.balance / 1e08)  * this.props.context.currencyValue).toFixed(6) + ' USD'}
+                    </AddressCurrencyDiv>
+                  </div>
+                </AddressSelectSection>
+
+
+                <div style = {addressListDisplay}>
+                  <SendAddressSection>
+                    {"Send to Address:"}
+                    <br/>
+                    <SendAddress
+                      value={this.state.sendToAddress}
+                      onFocus={() => this.resetScroll(this.props.context.dimensions.height * 0.26)}
+                      onBlur={() => this.resetScroll(0)}
+                      onChange={e => this.setSendToAddress(e.target.value)}  />
+                  </SendAddressSection>
+                  <MemoSection>
+                    {"Memo:"}
+                    <br/>
+                    <MemoArea
+                      value={this.state.memo}
+                      onFocus={() => this.resetScroll(this.props.context.dimensions.height * 0.26)}
+                      onBlur={() => this.resetScroll(0)}
+                      onChange={e => this.setMemo(e.target.value)}  />
+                  </MemoSection>
+                  <AmountSection>
+                    {"Amount: "}
+                    <AmountInput type="number"
+                      value={this.state.amount}
+                      onFocus={() => this.resetScroll(this.props.context.dimensions.height * 0.26)}
+                      onBlur={() => this.resetScroll(0)}
+                      onChange={e => this.setAmount(e.target.value)} />
+                  </AmountSection>
+                  <FeeSection>
+                    {"Fee: "}
+                    <AmountInput type="number"
+                      value={this.state.fee}
+                      onFocus={() => this.resetScroll(this.props.context.dimensions.height * 0.26)}
+                      onBlur={() => this.resetScroll(0)}
+                      onChange={e => this.setFee(e.target.value)} />
+                  </FeeSection>
+
+                  <ButtonTopSection>
+                    <SendQrButton onClick={() => {this.handleQRScan()}}>
+                      QR
+                    </SendQrButton>
+                    <SendCancelButton
+                      onClick={() => {
+                        this.resetSpend()
+                        this.props.setMainPage('visible')
+                        this.props.setSendPage('none')
+                        }}>
+                      Cancel
+                    </SendCancelButton>
+                  </ButtonTopSection>
+                  <ButtonBottomSection>
+                    {preSendButton}
+                  </ButtonBottomSection>
+
+                </div>
+              </SendSection>
+            </SendSectionOverScroll>
+          </SendDiv>
         )
     }
 
@@ -808,12 +590,9 @@ class Send extends React.Component {
 
 
 Send.propTypes = {
-  setZMainPage: PropTypes.func.isRequired,
-  setTMainPage: PropTypes.func.isRequired,
+  setMainPage: PropTypes.func.isRequired,
   setSendPage: PropTypes.func.isRequired,
   setQrScanning: PropTypes.func.isRequired,
-  setActiveType: PropTypes.func.isRequired,
-  setNoteInputs: PropTypes.func.isRequired,
   setProcessTime: PropTypes.func.isRequired,
   context: PropTypes.object.isRequired,
   settings: PropTypes.object.isRequired,
@@ -832,11 +611,8 @@ function matchDispatchToProps (dispatch) {
   return bindActionCreators(
     {
       setSendPage,
-      setZMainPage,
-      setTMainPage,
-      setActiveType,
+      setMainPage,
       setQrScanning,
-      setNoteInputs,
       setProcessTime
     },
     dispatch

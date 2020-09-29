@@ -5,28 +5,33 @@ import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 
 import { QRCode } from 'react-qrcode-logo'
-import logo from '../assets/logo-white-QR.png'
+import { coins } from '../utils/coins.js'
 
 import {
-  setZMainPage,
-  setTMainPage,
+  setMainPage,
   setPrivateKeyPage,} from '../actions/MainSubPage'
 
 import {
-    ReceiveGrid,
-    ReceiveSection,
-    ReceiveAddress,
-    ReceiveQR,
-    ReceiveButtonSection,
-    ReceiveGreyButton,
+    PrivateKeyDiv,
+    PrivateKeySection,
+    PrivateKeyPageTitle,
+    PrivateKeySectionTitle,
+    PrivateKeyPin,
+    PrivateKeyPinCancelButton,
+
+    PrivateKeyAddress,
+    PrivateKeyTitle,
+    PrivateKeyString,
+
+    PrivateKeyQR,
+    PrivateKeyButtonSection,
+    PrivateKeyCopyButton,
+    PrivateKeyCancelButton,
     PinSection,
     KeySection,
-    } from '../components/receive'
+} from '../components/privatekey'
 
-import {
-    ConfirmPin,
-    ConfirmPassword
-    } from '../components/send'
+import AddressDropdown from '../containers/addressdropdown'
 
 class PrivateKey extends React.Component {
 
@@ -36,12 +41,24 @@ class PrivateKey extends React.Component {
       this.state = {
         pin: 'visible',
         key: 'none',
-        password: ''
+        password: '',
+        flash: false,
       }
 
       //State Updates
       this.setPassword = this.setPassword.bind(this)
+      this.beginFlash = this.beginFlash.bind(this)
+      this.removeFlash = this.removeFlash.bind(this)
+    }
 
+    beginFlash () {
+      this.setState({flash: true})
+      this.setFlashReceiveId = setInterval(() => this.removeFlash(),125)
+    }
+
+    removeFlash () {
+      this.setState({flash: false})
+      clearInterval(this.setFlashReceiveId)
     }
 
     setPassword (p) {
@@ -78,82 +95,100 @@ class PrivateKey extends React.Component {
 
     render () {
         var screenDim = this.props.context.dimensions
-        var key
-        if (this.props.context.activeType == 'Z') {
-          key = this.props.context.zPrivateKey
-        } else if (this.props.context.activeType == 'T') {
-          key = this.props.context.tPrivateKey
+        var key = this.props.context.privateKey
+
+        var addressListDisplay
+        if (this.props.mainSubPage.addressList == 'none') {
+          addressListDisplay = {display: 'none'}
+        } else {
+          addressListDisplay = {}
         }
 
         return (
-        <ReceiveGrid sc={screenDim} visible={this.props.mainSubPage.privateKeyPage}>
+        <PrivateKeyDiv visible={this.props.mainSubPage.privateKeyPage}>
+          <PrivateKeyPageTitle>
+            {'Private Keys'}
+          </PrivateKeyPageTitle>
+
           <PinSection visible={this.state.pin}>
-            <ReceiveSection sc={screenDim}>
-              <ConfirmPassword>
-                <br/><br/><br/><br/>
-                Enter 8-Digit Pin to Unlock Keys
-                <br/><br/>
-                <ConfirmPin
-                  sc={screenDim}
+            <PrivateKeySection>
+              <PrivateKeySectionTitle>
+                {'Enter 8-Digit Pin to Unlock seed'}
+              </PrivateKeySectionTitle>
+              <PrivateKeyPin
                   type="password"
                   value={this.state.password}
                   onChange={e => this.setPassword(e.target.value)} />
-              </ConfirmPassword>
-              <br/>
-              <ReceiveGreyButton sc={screenDim}
+
+              <PrivateKeyPinCancelButton
                 onClick={() => {
-                  if (this.props.context.activeType == 'Z') {
-                    this.props.setZMainPage('visible')
-                  } else if (this.props.context.activeType == 'T') {
-                    this.props.setTMainPage('visible')
-                  }
+                  this.props.setMainPage('visible')
                   this.setState({pin: 'visible',key: 'none',password: ''})
                   this.props.setPrivateKeyPage('none')
                 }}>
                 Close
-              </ReceiveGreyButton>
-            </ReceiveSection>
+              </PrivateKeyPinCancelButton>
+            </PrivateKeySection>
           </PinSection>
 
           <KeySection visible={this.state.key}>
-            <ReceiveSection sc={screenDim}>
-              <ReceiveAddress sc={screenDim}
-                value={key}
-                onChange={() => {
-                  //console.log('address text area is static')
-                }}
-                >
-              </ReceiveAddress>
-              <ReceiveQR sc={screenDim}>
-                <QRCode value={key}
-                   size = {(screenDim.width * 0.70) - 20}
-                   logoImage = {logo}
-                   ecLevel = "H"
-                      />
-              </ReceiveQR>
-              <ReceiveButtonSection sc={screenDim}>
-                <ReceiveGreyButton sc={screenDim}
-                  onClick={() => {
-                    cordova.plugins.clipboard.copy(key)
-                  }}>
-                  Copy Key
-                </ReceiveGreyButton>
-                <ReceiveGreyButton sc={screenDim}
-                  onClick={() => {
-                    if (this.props.context.activeType == 'Z') {
-                      this.props.setZMainPage('visible')
-                    } else if (this.props.context.activeType == 'T') {
-                      this.props.setTMainPage('visible')
-                    }
-                    this.setState({pin: 'visible',key: 'none',password: ''})
-                    this.props.setPrivateKeyPage('none')
-                  }}>
-                  Close
-                </ReceiveGreyButton>
-              </ReceiveButtonSection>
-            </ReceiveSection>
+            <PrivateKeySection>
+
+              <PrivateKeySectionTitle>
+                {'Select Address'}
+              </PrivateKeySectionTitle>
+              <PrivateKeyAddress>
+                <div>
+                  <AddressDropdown/>
+                </div>
+              </PrivateKeyAddress>
+
+              <div style = {addressListDisplay}>
+                <PrivateKeyTitle>
+                  {'Private Key'}
+                </PrivateKeyTitle>
+                <PrivateKeyString flash = {this.state.flash}>
+                  {key}
+                </PrivateKeyString>
+
+
+
+
+                <PrivateKeyQR>
+                  <QRCode value={key}
+                     size = {(screenDim.height * 0.45) - 20}
+                     logoImage = {coins[this.props.settings.currentCoin].qrlogo}
+                     ecLevel = "H"
+                        />
+                </PrivateKeyQR>
+
+
+
+
+                <PrivateKeyButtonSection>
+                  <PrivateKeyCopyButton
+                    onClick={() => {
+                      this.beginFlash()
+                      cordova.plugins.clipboard.copy(key)
+                    }}>
+                    Copy Key
+                  </PrivateKeyCopyButton>
+
+
+                  <PrivateKeyCancelButton
+                    onClick={() => {
+                      this.props.setMainPage('visible')
+                      this.setState({pin: 'visible',key: 'none',password: ''})
+                      this.props.setPrivateKeyPage('none')
+                    }}>
+                    Close
+                  </PrivateKeyCancelButton>
+                </PrivateKeyButtonSection>
+              </div>
+
+            </PrivateKeySection>
           </KeySection>
-        </ReceiveGrid>
+        </PrivateKeyDiv>
 
         )
   }
@@ -162,8 +197,7 @@ class PrivateKey extends React.Component {
 
 PrivateKey.propTypes = {
   setPrivateKeyPage: PropTypes.func.isRequired,
-  setZMainPage: PropTypes.func.isRequired,
-  setTMainPage: PropTypes.func.isRequired,
+  setMainPage: PropTypes.func.isRequired,
   context: PropTypes.object.isRequired,
   settings: PropTypes.object.isRequired,
   mainSubPage: PropTypes.object.isRequired
@@ -181,8 +215,7 @@ function matchDispatchToProps (dispatch) {
   return bindActionCreators(
     {
       setPrivateKeyPage,
-      setZMainPage,
-      setTMainPage
+      setMainPage,
     },
     dispatch
   )

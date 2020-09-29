@@ -3,35 +3,30 @@
 import '@babel/polyfill'
 
 import {
-  SET_SUB_PAGE_ZMAIN,
-  SET_SUB_PAGE_TMAIN,
+  SET_SUB_PAGE_MAIN,
   SET_SUB_PAGE_SEND,
   SET_SUB_PAGE_RECEIVE,
   SET_SUB_PAGE_PRIVATE_KEY,
-  SET_SUB_PAGE_PASSPHRASE,
-  SET_SUB_PAGE_REINDEX,
+  SET_SUB_PAGE_SEED,
+  SET_SUB_PAGE_TX,
+  SET_SUB_PAGE_ADDRESSLIST,
 } from '../actions/MainSubPage'
 
 const initialMainSubPage= {
-  zmainPage: 'visible',
-  tmainPage: 'none',
+  mainPage: 'visible',
   sendPage: 'none',
   receivePage: 'none',
   privateKeyPage: 'none',
-  passPhrasePage: 'none',
-  reindexPage: 'none'
+  seedPage: 'none',
+  txPage: 'none',
+  addressList: 'visible'
 }
 
 export default function MainSubPageReducer (state = initialMainSubPage, action) {
   switch (action.type) {
-    case SET_SUB_PAGE_ZMAIN:
+    case SET_SUB_PAGE_MAIN:
       return Object.assign({}, state, {
-        zmainPage: action.zmainPage
-      })
-
-    case SET_SUB_PAGE_TMAIN:
-      return Object.assign({}, state, {
-        tmainPage: action.tmainPage
+        mainPage: action.mainPage
       })
 
     case SET_SUB_PAGE_SEND:
@@ -49,16 +44,20 @@ export default function MainSubPageReducer (state = initialMainSubPage, action) 
         privateKeyPage: action.privateKeyPage
       })
 
-    case SET_SUB_PAGE_PASSPHRASE:
+    case SET_SUB_PAGE_SEED:
       return Object.assign({}, state, {
-        passPhrasePage: action.passPhrasePage
+        seedPage: action.seedPage
       })
 
-    case SET_SUB_PAGE_REINDEX:
+    case SET_SUB_PAGE_TX:
       return Object.assign({}, state, {
-        reindexPage: action.reindexPage
+        txPage: action.txPage
       })
 
+    case SET_SUB_PAGE_ADDRESSLIST:
+      return Object.assign({}, state, {
+        addressList: action.addressList
+      })
 
     default:
       return state

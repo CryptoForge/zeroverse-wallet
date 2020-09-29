@@ -2,10 +2,10 @@ import '@babel/polyfill'
 
 import React from 'react'
 import { render } from 'react-dom'
-import { AppContainer } from 'react-hot-loader'
+// import { AppContainer } from 'react-hot-loader'
 import { Provider } from 'react-redux'
 import { createStore } from 'redux'
-import ons from 'onsenui'
+// import ons from 'onsenui'
 
 import allReducers from './reducers'
 import App from './App'
@@ -31,33 +31,36 @@ store.subscribe(() => {
 
 const rootElement = document.getElementById('app')
 
-ons.ready(() => {
-  ons.disableDeviceBackButtonHandler()
-  document.addEventListener('backbutton', function () {
-    if (confirm("Exit App?")) {
-      navigator.app.exitApp()
-    }
-  }, false)
+document.addEventListener("deviceready", onDeviceReady, false);
+
+function onDeviceReady() {
+
+// ons.ready(() => {
+//   ons.disableDeviceBackButtonHandler()
+//   document.addEventListener('backbutton', function () {
+//     if (confirm("Exit App?")) {
+//       navigator.app.exitApp()
+//     }
+//   }, false)
   render(
-    <AppContainer>
       <Provider store={store}>
         <App />
-      </Provider>
-    </AppContainer>,
+      </Provider>,
     rootElement
   )
-})
+// })
+}
 
-  if (module.hot) {
-    module.hot.accept('./App', () => {
-      const NextApp = require('./App').default
-      render(
-        <AppContainer>
-          <Provider store={store}>
-            <NextApp />
-          </Provider>
-        </AppContainer>,
-        rootElement
-      )
-    })
-  }
+  // if (module.hot) {
+  //   module.hot.accept('./App', () => {
+  //     const NextApp = require('./App').default
+  //     render(
+  //       <AppContainer>
+  //         <Provider store={store}>
+  //           <NextApp />
+  //         </Provider>
+  //       </AppContainer>,
+  //       rootElement
+  //     )
+  //   })
+  // }

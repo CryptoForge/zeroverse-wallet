@@ -4,18 +4,18 @@ import PropTypes from 'prop-types'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 
-import { setDimensions, setDB } from './actions/Context'
+import { ThemeProvider } from 'styled-components';
 
-//import { setContacts } from './actions/Contacts'
-import { setSecretPhrase, setSecretItems } from './actions/Secrets'
+import { setDimensions, setSelectCoin, setReindexWallet, setWalletLoaded } from './actions/Context'
+
+import { setSeedPhrase, setBirthday } from './actions/Secrets'
 import {
   setCurrentCoin,
   setLanguage,
   setCurrency,
   setWalletPassword,
-  setInsightAPI,
+  setWalletPassPhrase,
   setInsightExplorer,
-  setInsightZMQ,
   setMinimumBlock,
   setDisplayDimensions,
   setSaveData,
@@ -23,17 +23,14 @@ import {
   setProcessTime} from './actions/Settings'
 
 import {
-  setZMainPage,
-  setTMainPage,
+  setMainPage,
   setSendPage,
   setReceivePage,
   setPrivateKeyPage,
-  setPassPhrasePage,
-  setReindexPage} from './actions/MainSubPage'
-
-//import { phraseToSecretItems } from './utils/wallet'
+  setSeedPage} from './actions/MainSubPage'
 
 import { coins } from './utils/coins.js'
+import { getTheme } from './utils/theme.js'
 
 import { ZERO_MOBILE_SAVE_PATH, readFromFile } from './utils/persistentStorage'
 //import ZERO_LOGO from './assets/zero-logo-white.png'
@@ -58,18 +55,18 @@ import heading from './assets/zero-logo-white.png'
 
 import LoginPage from './pages/loginpage'
 import MainPage from './pages/mainpage'
+import CoinPage from './pages/coinpage'
+import ReindexPage from './pages/reindexpage'
 import SetPasswordPage from './pages/setpasswordpage'
 import SetWalletPage from './pages/setwalletpage'
-import SetParamsPage from './pages/setparamspage'
+import RingSpinner from './containers/spinner'
 
-import { deleteDatabase,
-         openDatabase,
-         openRecordset,
-         insertRecords,
-         runSqlCommand,
-         DATABASE_VERSION}  from './database/sqlite'
+import { walletExists,
+         initalizeWallet,
+         newWallet,
+         checkSeedPhrase } from './utils/litewallet'
 
-
+import {encrypt, decrypt, saltHashPassword, KeySalt} from './utils/hash.js'
 
 class App extends React.Component {
   constructor (props) {
@@ -77,16 +74,22 @@ class App extends React.Component {
 
     this.state = {
       tempPin: '',
+      Initalized: true,
       hasExistingWallet: false,
       hasExistingPin: false,
       hasInputPin: false,
       readSavedFile: false,
       parseError: false,
-      stringData: ''
+      stringData: '',
+      data: null
     }
+
     this.initalize = this.initalize.bind(this)
+    this.runInitalize = this.runInitalize.bind(this)
     this.setScreenSize = this.setScreenSize.bind(this)
     this.setRotate = this.setRotate.bind(this)
+    this.backButtonHandler = this.backButtonHandler.bind(this)
+
   }
 
   setScreenSize() {
@@ -95,75 +98,159 @@ class App extends React.Component {
       this.props.setDimensions({"height" : window.outerHeight, "width" : window.outerWidth})
       this.props.setDisplayDimensions({"height" : window.outerHeight, "width" : window.outerWidth})
     }
-
     screen.orientation.lock('portrait');
 
   }
 
   setRotate() {
-
-    // console.log(screen.orientation.type)
-
     if (screen.height > screen.width && this.props.context.dimensions.height < this.props.context.dimensions.width ||
         screen.height < screen.width && this.props.context.dimensions.height > this.props.context.dimensions.width ) {
         this.props.setDimensions({"height" : this.props.context.dimensions.width, "width" : this.props.context.dimensions.height})
         this.props.setDisplayDimensions({"height" : this.props.context.dimensions.width, "width" : this.props.context.dimensions.height})
     }
+  }
 
+  runInitalize() {
+    console.log(this.props.context.activePassword)
+    clearInterval(this.InitId)
 
-    // else if (this.props.context.dimensions.height < window.outerHeight) {
-    //   this.props.setDimensions({"height" : window.outerHeight, "width" : this.props.context.dimensions.width})
-    // } else if (this.props.context.dimensions.width < window.outerWidth) {
-    //   this.props.setDimensions({"height" : this.props.context.dimensions.height, "width" : window.outerWidth})
-    // }
-    //
+    if (this.props.context.activePassword == '') {
+      this.InitId = setInterval(
+        () => this.runInitalize(),
+        10
+      )
+    } else {
+      this.initalize()
+    }
   }
 
   async initalize() {
+
+    const keyHash = saltHashPassword(this.props.context.activePassword, KeySalt)
+
+    const data = this.state.data
+    //check for valid saved phrase
+    if (data != null) {
+      if (data.settings.passPhrase !== undefined && data.settings.passPhrase != null) {
+        var phrase = decrypt(data.settings.passPhrase, keyHash)
+        console.log(phrase)
+        var seedCheck = await checkSeedPhrase(phrase)
+        seedCheck = JSON.parse(seedCheck)
+        if (seedCheck.checkSeedPhrase == 'Ok') {
+            this.props.setWalletPassPhrase(data.settings.passPhrase)
+            this.setState({
+              hasExistingWallet: true
+            })
+          }
+        }
+      }
+
+      //reset to Zero
+      if (!this.state.hasExistingWallet) {
+        const coin = 'zero'
+        const apiSelection = Math.floor(Math.random()*coins[coin].explorer.length)
+        this.props.setCurrentCoin(coin)
+        this.props.setInsightExplorer(coins[coin].explorer[apiSelection])
+      }
+
+
+
+    var seed
+    var args
+    const currentCoin = this.props.settings.currentCoin
+    var walletFile = await walletExists(coins[currentCoin].networkname)
+    walletFile = JSON.parse(walletFile)
+
+    if (walletFile.exists) {
+      try {
+
+        args = [coins[currentCoin].networkname]
+        args.push(coins[currentCoin].litewallet[0])
+        args.push(coins[currentCoin].addressParams)
+        seed = await initalizeWallet(args)
+        seed = JSON.parse(seed)
+        if (seed.seed != null) {
+          this.props.setSeedPhrase(seed.seed)
+          this.props.setBirthday(seed.birthday)
+          this.props.setWalletLoaded(true)
+
+          //set passphase on existing wallets
+          if (this.props.settings.passPhrase == null) {
+            console.log(this.props.settings.passPhrase)
+            console.log(seed.seed)
+            var pass = encrypt(seed.seed, keyHash)
+            console.log(pass)
+            this.props.setWalletPassPhrase(pass)
+            console.log(this.props.settings.passPhrase)
+            this.setState({
+              hasExistingWallet: true
+            })
+          } else {
+            var pp = decrypt(this.props.settings.passPhrase, keyHash)
+            console.log(pp)
+            if (pp != seed.seed) {
+              alert("WARNING!!!" + args[0] + " seed phrase does not match the ZeroVerse's Master seed phrase.")
+            }
+          }
+        }
+      } catch (err) {
+        console.log(err)
+      }
+
+    } else {
+      try {
+
+        args = [(coins[currentCoin].litewallet[0])]
+        args.push(coins[currentCoin].addressParams)
+        seed = await newWallet(args)
+
+        seed = JSON.parse(seed)
+        if (seed.seed != null) {
+          this.props.setSeedPhrase(seed.seed)
+          this.props.setBirthday(seed.birthday)
+        }
+      } catch (err) {
+        console.log(err)
+      }
+    }
+
     this.setScreenSize()
     //window.addEventListener("orientationchange", this.setRotate)
     window.plugins.insomnia.keepAwake()
     //Database name
-    var dbName = 'sapling_' + coins[this.props.settings.currentCoin].networkname + '.db'
 
-    //initalize database
-    try {
-      await deleteDatabase('sapling.db')
-      console.log('sapling.db deleted')
-    } catch {
-      console.log('sapling.db not present')
-    }
-    var db = await openDatabase(dbName)
-    this.props.setDB(db)
-    await runSqlCommand(db,'CREATE TABLE IF NOT EXISTS Blocks (height INTEGER, hash TEXT, saplingroot TEXT, Processed INTEGER, Witnessed INTEGER, Nullified INTEGER, PRIMARY KEY(height))')
-    await runSqlCommand(db,'CREATE TABLE IF NOT EXISTS Transactions (height INTEGER, txid TEXT, txindex INTEGER, PRIMARY KEY(height, txid))')
-    await runSqlCommand(db,'CREATE TABLE IF NOT EXISTS Shieldedoutputs (height INTEGER, txid TEXT, outputindex INTEGER, cmu TEXT, cv TEXT, encCiphertext TEXT, ephemeralKey TEXT, outCiphertext TEXT, PRIMARY KEY(height, txid, outputindex))')
-    await runSqlCommand(db,'CREATE TABLE IF NOT EXISTS Shieldedspends (height INTEGER, txid TEXT, spendindex INTEGER, nullifier TEXT, PRIMARY KEY(height, txid, spendindex))')
-    await runSqlCommand(db,'CREATE TABLE IF NOT EXISTS Wallet (height INTEGER, txid TEXT, txindex INTEGER, outputindex INTEGER, cmu TEXT, cv TEXT, encCiphertext TEXT, ephemeralKey TEXT, outCiphertext TEXT, witness TEXT, nullifier TEXT, spent INTEGER, spenttxid TEXT, value INTEGER, PRIMARY KEY(height, txid, outputindex))')
-    await runSqlCommand(db,'CREATE TABLE IF NOT EXISTS Witnesses (cmu TEXT, height INTEGER, witness TEXT, root TEXT, PRIMARY KEY(height, cmu))')
-    await runSqlCommand(db,'CREATE TABLE IF NOT EXISTS Version (version INTEGER)')
+    this.setState({
+      Initalized: true,
+    })
 
-    await runSqlCommand(db,'CREATE INDEX IF NOT EXISTS IDX_BLOCKS_PROCESSED ON Blocks(Processed)')
+  }
 
-    var version = await openRecordset(db, 'SELECT version FROM Version ORDER BY 1 DESC')
-    if (version.rows.length > 0) {
-      if (DATABASE_VERSION != Number(version.rows.item(0).version)) {
-        try {
-          await deleteDatabase(dbName)
-          console.log(dbName +' deleted')
-        } catch {
-          console.log(dbName +' not present')
-        }
-        this.initalize()
+  backButtonHandler () {
+    if (this.props.mainSubPage.mainPage != 'visible') {
+      this.props.setMainPage('visible')
+      this.props.setSendPage('none')
+      this.props.setReceivePage('none')
+      this.props.setPrivateKeyPage('none')
+      this.props.setSeedPage('none')
+
+    } else if (this.props.context.selectCoin || this.props.context.reindexWallet) {
+      if (this.props.context.saving) {
+        alert("Back button disabled on this screen.")
       } else {
-        await insertRecords(db, 'INSERT INTO Version VALUES (?1)',[DATABASE_VERSION])
+      this.props.setSelectCoin(false)
+      this.props.setReindexWallet(false)
+      }
+    } else {
+      if (confirm("Exit App?")) {
+        navigator.app.exitApp()
       }
     }
   }
 
+
   componentDidMount() {
 
-    this.initalize()
+    document.addEventListener('backbutton', this.backButtonHandler, false)
 
     readFromFile(ZERO_MOBILE_SAVE_PATH, (data) => {
       // If errors while we're reading the JSOn
@@ -181,23 +268,11 @@ class App extends React.Component {
 
       try {
         data = JSON.parse(data)
+        this.setState({data: data})
       } catch (err) {
           data = {}
       }
 
-      // Get secret phrase
-      if (data.secretPhrase !== undefined) {
-        const secretPhrase = data.secretPhrase
-        //const secretPhrase = 'rhyme empty riding first smooth badly dust load strange torn news tears dig throw kitchen previous'
-        //const secretItems = phraseToSecretItems(secretPhrase)
-
-        //this.props.setSecretItems(secretItems)
-        this.props.setSecretPhrase(secretPhrase)
-
-        this.setState({
-          hasExistingWallet: true
-        })
-      }
 
       // Get settings
       if (data.settings !== undefined) {
@@ -213,20 +288,8 @@ class App extends React.Component {
 
         //set API & Explorer based on coin
         const coin = this.props.settings.currentCoin
-        const apiSelection = Math.floor(Math.random()*coins[coin].api.length)
-        this.props.setInsightAPI(coins[coin].api[apiSelection])
+        const apiSelection = Math.floor(Math.random()*coins[coin].explorer.length)
         this.props.setInsightExplorer(coins[coin].explorer[apiSelection])
-        this.props.setInsightZMQ(coins[coin].zmq[apiSelection])
-
-        if (data.settings.minimumBlock !== undefined) {
-          this.props.setMinimumBlock(data.settings.minimumBlock)
-        }
-
-        if (this.props.settings.minimumBlock[coin] == undefined) {
-          var minBlock = this.props.settings.minimumBlock
-          minBlock[coin] = coins[coin].branchHeight['sapling'] -1
-          this.props.setMinimumBlock(minBlock)
-        }
 
         if (data.settings.noteInputs !== undefined) {
           this.props.setNoteInputs( data.settings.noteInputs)
@@ -258,6 +321,8 @@ class App extends React.Component {
           readSavedFile: true
         })
       }
+
+
     }, (err) => {
 
       if (this.state.parseError === false) {
@@ -278,93 +343,86 @@ class App extends React.Component {
 
     var screenDim = this.props.context.dimensions
 
-    var startDisplay = {display: 'none'}
-    var mainDisplay = {display: 'none'}
-    var loginDisplay = {display: 'none'}
-    var walletDisplay = {display: 'none'}
-    var passwordDisplay = {display: 'none'}
-    var paramsDisplay = {display: 'none'}
+    var app
 
-    var paramsAvailable = <div />
-    var mainAvailable = <div />
-
-    if (this.props.secrets.items.length > 0) {
-      mainAvailable = <MainPage />
-    }
-    if (this.state.hasExistingWallet && this.state.hasInputPin) {
-      paramsAvailable = <SetParamsPage />
-    }
-
-    if (!this.state.readSavedFile) {
-      startDisplay = {}
+    if (!this.state.readSavedFile || !this.state.Initalized) {
+        app =  <LoginGrid>
+                  <LoginForm>
+                  </LoginForm>
+                  <LoginFormOpaque visible={'visible'}>
+                    <br/>
+                    <LoginHeading>
+                      <LoginHeadingImg src={heading}/>
+                    </LoginHeading>
+                    <br/><br/><br/>
+                    <RingSpinner/>
+                    <LoginSocialContainer>
+                      <a href="https://www.zerocurrency.io">
+                        <LoginSocial src={zerologo}/>
+                      </a>
+                      <a href="https://github.com/zerocurrency">
+                        <LoginSocial src={github}/>
+                      </a>
+                      <a href="https://twitter.com/ZeroCurrencies">
+                        <LoginSocial src={twitter}/>
+                      </a>
+                      <a href="https://t.me/zerocurrency">
+                        <LoginSocial src={telegram}/>
+                      </a>
+                      <a href="https://discordapp.com/invite/Jq5knn5">
+                        <LoginSocial src={discord}/>
+                      </a>
+                    </LoginSocialContainer>
+                  </LoginFormOpaque>
+                </LoginGrid>
     } else {
       if (!this.state.hasExistingPin) {
-        passwordDisplay = {}
+        app = <SetPasswordPage onComplete={() => {
+          this.setState({
+            hasExistingPin: true,
+            hasInputPin: true,
+            Initalized: false
+          })
+          this.runInitalize()
+        }} />
       } else {
         if(!this.state.hasInputPin)
-        loginDisplay = {}
+          app = <LoginPage onComplete={() => {
+            this.setState({
+              hasInputPin: true,
+              Initalized: false
+            })
+            this.runInitalize()
+          }} />
         else {
           if(!this.state.hasExistingWallet) {
-            walletDisplay = {}
+            app = <SetWalletPage setHasExistingWallet={(v) => this.setState({ hasExistingWallet: v })}/>
           } else {
-            if(!this.props.context.saplingoutputverified || !this.props.context.saplingspendverified || this.props.secrets.items.length == 0) {
-              paramsDisplay ={}
+            if (this.props.context.selectCoin) {
+              app = <CoinPage />
             } else {
-              mainDisplay = {}
+              if (!this.props.context.walletLoaded) {
+                app = <CoinPage />
+              } else {
+                  if (this.props.context.reindexWallet) {
+                  app = <ReindexPage />
+                } else {
+                  app = <MainPage />
+                }
+              }
             }
           }
         }
       }
     }
 
+    var theme = getTheme(screenDim)
+
         return (
           <div>
-            <div style = {startDisplay}>
-              <LoginGrid sc={screenDim}>
-                <LoginForm sc={screenDim}>
-                </LoginForm>
-                <LoginFormOpaque sc={screenDim} visible={'visible'}>
-                  <br/>
-                  <LoginHeading>
-                    <LoginHeadingImg src={heading} sc={screenDim}/>
-                  </LoginHeading>
-                  <br/>
-                  <br/><br/>
-                  <LoginSocialContainer sc={screenDim}>
-                    <a href="https://www.zerocurrency.io">
-                      <LoginSocial src={zerologo} sc={screenDim}/>
-                    </a>
-                    <a href="https://github.com/zerocurrency">
-                      <LoginSocial src={github} sc={screenDim}/>
-                    </a>
-                    <a href="https://twitter.com/ZeroCurrencies">
-                      <LoginSocial src={twitter} sc={screenDim}/>
-                    </a>
-                    <a href="https://t.me/zerocurrency">
-                      <LoginSocial src={telegram} sc={screenDim}/>
-                    </a>
-                    <a href="https://discordapp.com/invite/Jq5knn5">
-                      <LoginSocial src={discord} sc={screenDim}/>
-                    </a>
-                  </LoginSocialContainer>
-                </LoginFormOpaque>
-              </LoginGrid>
-            </div>
-            <div style = {mainDisplay}>
-              {mainAvailable}
-            </div>
-            <div style = {loginDisplay}>
-              <LoginPage onComplete={() => this.setState({ hasInputPin: true })} />
-            </div>
-            <div style = {walletDisplay}>
-              <SetWalletPage setHasExistingWallet={(v) => this.setState({ hasExistingWallet: v })}/>
-            </div>
-            <div style = {passwordDisplay}>
-              <SetPasswordPage onComplete={() => this.setState({ hasExistingPin: true, hasInputPin: true })} />
-            </div>
-            <div style = {paramsDisplay}>
-              {paramsAvailable}
-            </div>
+            <ThemeProvider theme = {theme}>
+              {app}
+            </ThemeProvider>
           </div>
 
         )
@@ -373,68 +431,68 @@ class App extends React.Component {
 
 
 App.propTypes = {
-  setZMainPage: PropTypes.func.isRequired,
-  setTMainPage: PropTypes.func.isRequired,
+  setWalletLoaded: PropTypes.func.isRequired,
+  setSelectCoin: PropTypes.func.isRequired,
+  setReindexWallet: PropTypes.func.isRequired,
+  setMainPage: PropTypes.func.isRequired,
   setSendPage: PropTypes.func.isRequired,
   setReceivePage: PropTypes.func.isRequired,
   setPrivateKeyPage: PropTypes.func.isRequired,
-  setPassPhrasePage: PropTypes.func.isRequired,
-  setReindexPage: PropTypes.func.isRequired,
+  setSeedPage: PropTypes.func.isRequired,
   setCurrentCoin: PropTypes.func.isRequired,
   setLanguage: PropTypes.func.isRequired,
   setCurrency: PropTypes.func.isRequired,
   setNoteInputs: PropTypes.func.isRequired,
   setProcessTime: PropTypes.func.isRequired,
   setWalletPassword: PropTypes.func.isRequired,
-  setInsightAPI: PropTypes.func.isRequired,
+  setWalletPassPhrase: PropTypes.func.isRequired,
   setInsightExplorer: PropTypes.func.isRequired,
-  setInsightZMQ: PropTypes.func.isRequired,
   setMinimumBlock: PropTypes.func.isRequired,
   setDisplayDimensions: PropTypes.func.isRequired,
   setSaveData: PropTypes.func.isRequired,
-  setSecretItems: PropTypes.func.isRequired,
-  setSecretPhrase: PropTypes.func.isRequired,
+  setBirthday: PropTypes.func.isRequired,
+  setSeedPhrase: PropTypes.func.isRequired,
   setDimensions: PropTypes.func.isRequired,
-  setDB: PropTypes.func.isRequired,
   context: PropTypes.object.isRequired,
   settings: PropTypes.object.isRequired,
-  secrets: PropTypes.object.isRequired
+  secrets: PropTypes.object.isRequired,
+  mainSubPage: PropTypes.object.isRequired
 }
 
 function mapStateToProps (state) {
   return {
     context: state.context,
     settings: state.settings,
-    secrets: state.secrets
+    secrets: state.secrets,
+    mainSubPage: state.mainSubPage
   }
 }
 
 function matchDispatchToProps (dispatch) {
   return bindActionCreators(
     {
-      setZMainPage,
-      setTMainPage,
+      setWalletLoaded,
+      setSelectCoin,
+      setReindexWallet,
+      setMainPage,
       setSendPage,
       setReceivePage,
       setPrivateKeyPage,
-      setPassPhrasePage,
-      setReindexPage,
+      setSeedPage,
       setCurrentCoin,
       setLanguage,
       setCurrency,
       setNoteInputs,
       setProcessTime,
       setWalletPassword,
-      setInsightAPI,
+      setWalletPassPhrase,
       setInsightExplorer,
-      setInsightZMQ,
       setMinimumBlock,
       setDisplayDimensions,
       setSaveData,
-      setSecretItems,
-      setSecretPhrase,
+      setBirthday,
+      setSeedPhrase,
       setDimensions,
-      setDB,
     },
     dispatch
   )

@@ -4,36 +4,33 @@ import PropTypes from 'prop-types'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 
+import { coins } from '../utils/coins.js'
+import { encrypt, saltHashPassword, KeySalt } from '../utils/hash.js'
+import { setSeedPhrase, setBirthday } from '../actions/Secrets'
+import { setMinimumBlock, setWalletPassPhrase } from '../actions/Settings'
+import { setQrScanning, setWalletLoaded } from '../actions/Context'
+
 import Qr from '../containers/qr'
-
-import axios from 'axios'
-
-import { setSecretPhrase, setSecretItems } from '../actions/Secrets'
-import {
-  encrypt,
-  saltHashPassword,
-  KeySalt}from '../utils/hash'
-
-import { setMinimumBlock } from '../actions/Settings'
-
-import {setQrScanning} from '../actions/Context'
-
-import RandomWords from 'random-words'
-
-import { LoginGrid,
-         LoginForm,
-         LoginFormOpaque,
-         LoginHeading,
-         LoginHeadingImg,
-         LoginPassword} from '../components/login'
-
- import { WalletKey,
-          WalletButtonContainer,
+import RingSpinner from '../containers/spinner'
+import {  WalletPage,
+          WalletPageTitle,
+          WalletSection,
+          WalletSectionTitle,
+          WalletSpinner,
+          WalletKey,
+          WalletKeyInvalid,
+          WalletBirthdayTitle,
+          WalletBirthday,
           WalletPhraseButton,
-          WalletQRButton,
-          WalletSetButton} from '../components/wallet'
+          WalletSetButton,
+          WalletCancelButton,
+          WalletCreateNewButton,
+          WalletRecoverOldButton,} from '../components/wallet'
 
-import heading from '../assets/zero-logo-white.png'
+import { restoreWallet,
+         checkSeedPhrase,
+         getSeedPhrase,
+         save} from '../utils/litewallet'
 
 class SetWalletPage extends React.Component {
 
@@ -41,57 +38,61 @@ class SetWalletPage extends React.Component {
     super(props)
 
     this.state = {
-      tempSecretPhrase: '',
-      currentHeight: 0
+      openSection: 1,
+      tempSeedPhrase: '',
+      tempBirthday: 0,
+      tempSeedPhraseInvalid: ''
     }
 
-    this.handleLoadWallet = this.handleLoadWallet.bind(this)
-    this.handleNewWallet = this.handleNewWallet.bind(this)
-    this.setTempSecretPhrase = this.setTempSecretPhrase.bind(this)
-    this.setCurrentHeight = this.setCurrentHeight.bind(this)
-    this.setWalletToCurrentBlock = this.setWalletToCurrentBlock.bind(this)
-    this.getCurrentBlock = this.getCurrentBlock.bind(this)
+    this.setTempSeedPhraseInvalid = this.setTempSeedPhraseInvalid.bind(this)
+    this.setTempSeedPhrase = this.setTempSeedPhrase.bind(this)
+    this.setTempBirthday = this.setTempBirthday.bind(this)
     this.safeReleaseCamera = this.safeReleaseCamera.bind(this)
     this.handleQRScan = this.handleQRScan.bind(this)
+    this.restoreWallet = this.restoreWallet.bind(this)
+    this.setWallet = this.setWallet.bind(this)
+    this.getNewPhrase = this.getNewPhrase.bind(this)
   }
 
-  setTempSecretPhrase (p) {this.setState({tempSecretPhrase: p})}
-  setCurrentHeight(p) {this.setState({currentHeight: p})}
-
-  setWalletToCurrentBlock () {
-
-    var minBlock = this.props.settings.minimumBlock
-    minBlock[this.props.settings.currentCoin] = this.state.currentHeight
-    this.props.setMinimumBlock(minBlock)
-    this.handleLoadWallet(this.state.tempSecretPhrase)
-  }
-
-  async getCurrentBlock () {
-    if (this.state.currentHeight == 0) {
-      try {
-        var response = await axios.get(this.props.settings.insightAPI + 'insight-api-zero/status')
-        this.setCurrentHeight(Number(response.data.info.blocks))
-      } catch (err) {
-        if (process.env.NODE_ENV != 'production') {
-          console.log(err)
-        }
-      }
+  setSection (p) {
+    if (p == 1) {
+      this.setState({
+        openSection: p,
+        tempBirthday: this.props.secrets.birthday,
+        tempSeedPhrase: this.props.secrets.seedPhrase
+      })
+    } else {
+      this.setState({
+        openSection: p
+      })
     }
   }
 
-  handleNewWallet () {
-    // generate random phrase
-    var randomPhrase = RandomWords({exactly: 16, minLength: 4})
-    randomPhrase = randomPhrase.join(' ')
-    this.setTempSecretPhrase(randomPhrase)
+  setTempSeedPhraseInvalid(b) {
+    if (b) {
+      this.setState({
+        tempSeedPhraseInvalid: 'Seed Phrase Invalid!!!'
+      })
+    } else {
+      this.setState({
+        tempSeedPhraseInvalid: ''
+      })
+    }
+  }
+  setTempSeedPhrase (p) {
+    this.setState({tempSeedPhrase: p})
+    this.checkSeed(p)
   }
 
-  handleLoadWallet (phrase) {
-    //console.log(this.props.context.activePassword)
-    var keyHash = saltHashPassword(this.props.context.activePassword, KeySalt)
-    var encryptedPhrase = encrypt(phrase, keyHash)
-    this.props.setSecretPhrase(encryptedPhrase)
-    this.props.setHasExistingWallet(true)
+  setTempBirthday (p) {
+
+    try {
+      p = Math.floor(+p)
+    } catch {
+      p = coins[this.props.settings.currentCoin].branchHeight['sapling']
+    }
+
+    this.setState({tempBirthday: p})
   }
 
   handleQRScan () {
@@ -106,14 +107,16 @@ class SetWalletPage extends React.Component {
       // the scan method
       if (status.authorized) {
         // Start scanning
-        QRScanner.scan(function (err, address) {
+        QRScanner.scan(function (err, qr) {
           // an error occurred, or the scan was canceled (error code `6`)
           if (err) {
             alert(JSON.stringify(err))
           } else {
             // The scan completed, display the contents of the QR code
+            qr = JSON.parse(qr)
             this.setState({
-              tempSecretPhrase: address
+              tempSeedPhrase: qr.seed,
+              tempBirthday: qr.birthday
             })
           }
 
@@ -148,9 +151,82 @@ class SetWalletPage extends React.Component {
     }
   }
 
+  async restoreWallet(s) {
+    const currentCoin = this.props.settings.currentCoin
+    var minHeight = coins[currentCoin].branchHeight['sapling']
+    var args = [coins[currentCoin].litewallet[0]]
+    args.push(coins[currentCoin].addressParams)
+    var seedCheck = await checkSeedPhrase(this.state.tempSeedPhrase)
+    seedCheck = JSON.parse(seedCheck)
+
+    if (seedCheck.checkSeedPhrase == 'Ok') {
+      args.push(this.state.tempSeedPhrase)
+      try {
+
+        if (this.state.tempBirthday > minHeight) {
+          if (this.state.tempBirthday <= this.props.secrets.birthday) {
+              args.push(this.state.tempBirthday.toString())
+          } else {
+              args.push(this.props.secrets.birthday.toString())
+          }
+        } else {
+          args.push(minHeight.toString())
+        }
+        var seed = await restoreWallet(args)
+        seed = JSON.parse(seed)
+        if (seed.seed != null) {
+          const keyHash = saltHashPassword(this.props.context.activePassword, KeySalt)
+          const pass = encrypt(seed.seed, keyHash)
+          this.props.setWalletPassPhrase(pass)
+          this.setWallet(seed, currentCoin)
+          this.props.setWalletLoaded(true)
+        }
+
+      } catch (err) {
+        console.log(err.description)
+      }
+    } else {
+      this.setSection(s)
+      this.setTempSeedPhraseInvalid(true)
+    }
+  }
+
+  async getNewPhrase() {
+    var seed
+    try {
+      seed = await getSeedPhrase()
+    } catch (err) {
+      console.log(err.description)
+    }
+    seed = JSON.parse(seed)
+    this.setTempSeedPhrase(seed.seedPhrase)
+    this.setTempBirthday(this.props.secrets.birthday)
+    this.setTempSeedPhraseInvalid(false)
+  }
+
+  async checkSeed(seed) {
+    var seedCheck = await checkSeedPhrase(seed)
+    seedCheck = JSON.parse(seedCheck)
+    if (seedCheck.checkSeedPhrase == 'Ok') {
+      this.setTempSeedPhraseInvalid(false)
+    } else {
+      this.setTempSeedPhraseInvalid(true)
+    }
+  }
+
+  async setWallet(seed, currentCoin) {
+    var walletFile = await save(coins[currentCoin].networkname)
+    walletFile = JSON.parse(walletFile)
+    if(walletFile.saved) {
+      this.props.setHasExistingWallet(true)
+      this.props.setSeedPhrase(seed.seed)
+      this.props.setBirthday(seed.birthday)
+    }
+  }
+
   componentDidMount () {
-    this.handleNewWallet()
-    this.getCurrentBlock()
+    this.setTempSeedPhrase(this.props.secrets.seedPhrase)
+    this.setTempBirthday(this.props.secrets.birthday)
   }
 
   componentWillUnmount () {
@@ -159,91 +235,175 @@ class SetWalletPage extends React.Component {
 
     render () {
       const mainStyle =  this.props.context.qrScanning ? {opacity: '0.0', display: 'none'} : {opacity: '1.0'}
-      const screenDim = this.props.context.dimensions
 
       var buttonDisplay = 'none'
-      if (this.state.tempSecretPhrase.length >= 16 && this.state.currentHeight != 0) {
+      if (this.state.tempSeedPhrase.length >= 16 && this.state.currentHeight != 0) {
         buttonDisplay = 'visible'
       }
 
+      var walletSection
+      switch (this.state.openSection) {
+        case 1:
+          walletSection =
+            <WalletSection visible={'none'}>
+              <WalletCreateNewButton
+                onClick={() => this.setSection(2)}>
+                Create New Wallet
+              </WalletCreateNewButton>
+              <WalletRecoverOldButton
+                onClick={() => this.setSection(3)}>
+                Recover Wallet
+              </WalletRecoverOldButton>
+            </WalletSection>
+            break
+        case 2: //Create New Wallet
+          walletSection =
+            <WalletSection>
+              <WalletSectionTitle>
+                {'Set Wallet Seed Phrase'}
+              </WalletSectionTitle>
+
+              <WalletKey value={this.state.tempSeedPhrase}/>
+              <WalletKeyInvalid>
+                {this.state.tempSeedPhraseInvalid}
+              </WalletKeyInvalid>
+
+              <WalletBirthdayTitle>
+                {'Wallet Birthday'}
+              </WalletBirthdayTitle>
+              <WalletBirthday value={this.state.tempBirthday}/>
+
+              <WalletPhraseButton
+                onClick={() => this.getNewPhrase()}>
+                New Phrase
+              </WalletPhraseButton>
+
+              <WalletCancelButton display={buttonDisplay}
+                 onClick={() => this.setSection(1)}>
+                 Cancel
+              </WalletCancelButton>
+
+              <WalletSetButton display={buttonDisplay}
+                onClick={() => {
+                  this.setSection(4)
+                  this.restoreWallet(3)
+                }}>
+                Create Wallet
+             </WalletSetButton>
+
+            </WalletSection>
+            break
+
+          case 3: //Recover Wallet
+          walletSection =
+            <WalletSection>
+              <WalletSectionTitle>
+                {'Set Wallet Seed Phrase'}
+              </WalletSectionTitle>
+
+              <WalletKey
+                value={this.state.tempSeedPhrase}
+                onChange = { (e) => {
+                  this.setTempSeedPhrase(e.target.value)
+                }}
+              />
+              <WalletKeyInvalid>
+                {this.state.tempSeedPhraseInvalid}
+              </WalletKeyInvalid>
+
+              <WalletBirthdayTitle>
+                {'Wallet Birthday'}
+              </WalletBirthdayTitle>
+              <WalletBirthday
+                value={this.state.tempBirthday}
+                onChange = { (e) => {
+                  this.setTempBirthday(e.target.value)
+                }}
+              />
+
+              <WalletPhraseButton
+                onClick={() => this.handleQRScan()}>
+                Scan QR Code
+              </WalletPhraseButton>
+
+              <WalletCancelButton display={buttonDisplay}
+                 onClick={() => this.setSection(1)}>
+                 Cancel
+              </WalletCancelButton>
+
+              <WalletSetButton display={buttonDisplay}
+                onClick={() => {
+                  this.setSection(4)
+                  this.restoreWallet(3)
+                }}>
+                Restore Wallet
+              </WalletSetButton>
+
+            </WalletSection>
+            break
+
+          case 4:
+            walletSection =
+            <WalletSection>
+              <WalletSectionTitle>
+                {'Setting Up Wallet'}
+              </WalletSectionTitle>
+              <WalletSpinner>
+                <RingSpinner/>
+              </WalletSpinner>
+            </WalletSection>
+            break
+
+          default:
+            walletSection = <div></div>
+      }
+
       return (
-      <div>
-        <div style={mainStyle}>
-          <LoginGrid sc={screenDim}>
-            <LoginForm sc={screenDim}>
-            </LoginForm>
-            <LoginFormOpaque sc={screenDim} visible={'visible'}>
-              <br/>
-              <LoginHeading>
-                <LoginHeadingImg src={heading} sc={screenDim}/>
-              </LoginHeading>
-              <br/>
-              <LoginPassword>
-                Set Wallet Key Phrase
-                <br/>
-                <WalletKey sc={screenDim}
-                  value={this.state.tempSecretPhrase}
-                  onChange={e => this.setTempSecretPhrase(e.target.value)}>
-                </WalletKey>
-                <br/><br/>
-                <WalletButtonContainer sc={screenDim}>
-                  <WalletPhraseButton sc={screenDim}
-                    onClick={() => this.handleNewWallet()}>
-                    New Phrase
-                  </WalletPhraseButton>
-                  <WalletQRButton sc={screenDim}
-                    onClick={() => {this.handleQRScan()}}>
-                    Scan Phrase
-                  </WalletQRButton>
-                </WalletButtonContainer>
-                <br/><br/>
-                <WalletButtonContainer sc={screenDim}>
-                  <WalletSetButton sc={screenDim} display={buttonDisplay}
-                     onClick={() => this.setWalletToCurrentBlock()}>
-                     Create New Wallet
-                  </WalletSetButton>
-                </WalletButtonContainer>
-                <br/><br/>
-                <WalletButtonContainer sc={screenDim}>
-                  <WalletSetButton sc={screenDim} display={buttonDisplay}
-                    onClick={() => this.handleLoadWallet(this.state.tempSecretPhrase)}>
-                    Recover Wallet
-                 </WalletSetButton>
-                </WalletButtonContainer>
-              </LoginPassword>
-            </LoginFormOpaque>
-          </LoginGrid>
+        <div>
+          <div style={mainStyle}>
+            <WalletPage>
+              <WalletPageTitle>
+                {'Create Wallet'}
+              </WalletPageTitle>
+              {walletSection}
+            </WalletPage>
+          </div>
+          <Qr/>
         </div>
-        <Qr/>
-      </div>
       )
     }
   }
 
 
 SetWalletPage.propTypes = {
+  setWalletPassPhrase: PropTypes.func.isRequired,
+  setWalletLoaded: PropTypes.func.isRequired,
   setQrScanning: PropTypes.func.isRequired,
-  setSecretPhrase: PropTypes.func.isRequired,
-  setSecretItems: PropTypes.func.isRequired,
+  setSeedPhrase: PropTypes.func.isRequired,
+  setBirthday: PropTypes.func.isRequired,
   setMinimumBlock: PropTypes.func.isRequired,
   setHasExistingWallet: PropTypes.func.isRequired,
   context: PropTypes.object.isRequired,
-  settings: PropTypes.object.isRequired
+  settings: PropTypes.object.isRequired,
+  secrets: PropTypes.object.isRequired
 }
 
 function mapStateToProps (state) {
   return {
     context: state.context,
-    settings: state.settings
+    settings: state.settings,
+    secrets: state.secrets
   }
 }
 
 function matchDispatchToProps (dispatch) {
   return bindActionCreators(
     {
+      setWalletPassPhrase,
+      setWalletLoaded,
       setQrScanning,
-      setSecretPhrase,
-      setSecretItems,
+      setSeedPhrase,
+      setBirthday,
       setMinimumBlock,
     },
     dispatch
