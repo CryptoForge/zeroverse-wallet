@@ -17,6 +17,7 @@ npm install -g yarn cordova
 git clone https://github.com/zerocurrencycoin/ZeroVerse-Wallet.git
 cd ZeroVerse-Wallet
 git checkout master
+cd SaplingMobile
 yarn install
 ```
 
