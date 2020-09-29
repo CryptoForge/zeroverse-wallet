@@ -11,6 +11,7 @@ import { setAddress,
          setSaving,
          setZAddresses,
          setTAddresses,
+         setMenuReady,
          setRefreshAddresses,
          setWalletInUse } from '../actions/Context'
 
@@ -204,6 +205,10 @@ class ChainOps extends React.Component {
           this.props.setPrivateKey(pk[0].private_key)
         }
 
+        if (!this.props.context.menuReady) {
+          this.props.setMenuReady(true)
+        }
+
         this.props.setWalletInUse(false)
       }
 
@@ -327,6 +332,7 @@ ChainOps.propTypes = {
   setRefreshAddresses: PropTypes.func.isRequired,
   setTAddresses: PropTypes.func.isRequired,
   setZAddresses: PropTypes.func.isRequired,
+  setMenuReady: PropTypes.func.isRequired,
   setSynced: PropTypes.func.isRequired,
   setSaving: PropTypes.func.isRequired,
   setAddress: PropTypes.func.isRequired,
@@ -353,6 +359,7 @@ function matchDispatchToProps (dispatch) {
       setRefreshAddresses,
       setTAddresses,
       setZAddresses,
+      setMenuReady,
       setAddress,
       setBalance,
       setPrivateKey,

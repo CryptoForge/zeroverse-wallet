@@ -193,6 +193,42 @@ class Main extends React.Component {
         size = 4
       }
 
+      var coinMenu = []
+
+      if (this.props.context.menuReady) {
+        coinMenu.push(<MenuButtonLine pos={1}
+        onClick={() => {
+          this.props.setMainPage('none')
+          this.props.setPrivateKeyPage('visible')
+        }}
+        >
+        Private Key(s)
+        </MenuButtonLine>)
+
+        coinMenu.push(<MenuButtonLine pos={2}
+        onClick={() => {
+          this.props.setMainPage('none')
+          this.props.setSeedPage('visible')
+        }}
+        >
+        Wallet Seed
+        </MenuButtonLine>)
+
+        coinMenu.push(<MenuButtonLine pos={3}
+        onClick={() => {
+          this.props.setReindexWallet(true)
+        }}
+        >
+        Reindex Wallet
+        </MenuButtonLine>)
+      } else {
+        rescanButton = null
+        displaySendButton = <MainSendButton disabled = {true}>
+          Send
+        </MainSendButton>
+        size = 1
+      }
+
 
 
       return (
@@ -209,39 +245,15 @@ class Main extends React.Component {
               <MenuButtonImg src={menuIcon}/>
             </MenuButton>
             <MenuContent visible={this.state.menuOpen} size={size}>
+
               <MenuButtonLine pos={0}
-              onClick={() => {
-                this.props.setMainPage('none')
-                this.props.setPrivateKeyPage('visible')
-              }}
-              >
-              Private Key(s)
-              </MenuButtonLine>
-
-              <MenuButtonLine pos={1}
-              onClick={() => {
-                this.props.setMainPage('none')
-                this.props.setSeedPage('visible')
-              }}
-              >
-              Wallet Seed
-              </MenuButtonLine>
-
-              <MenuButtonLine pos={2}
               onClick={() => {
                 this.props.setSelectCoin(true)
               }}
               >
               Select Coin
               </MenuButtonLine>
-
-              <MenuButtonLine pos={3}
-              onClick={() => {
-                this.props.setReindexWallet(true)
-              }}
-              >
-              Reindex Wallet
-              </MenuButtonLine>
+              {coinMenu}
               {rescanButton}
             </MenuContent>
           </Menu>

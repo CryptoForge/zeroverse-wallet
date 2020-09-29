@@ -146,7 +146,7 @@ export const MenuContent = styled.div`
   left: 0
   background-color: ${props => props.theme.colorBackgroundPrimary};
   height: ${props => ((props.theme.height * 0.05) * props.size) + 'px'};
-  width: ${props => ((props.theme.width * 0.35)) + 'px'};
+  width: ${props => ((props.theme.width * 0.45)) + 'px'};
   z-index: 2;
 `
 export const MenuButton = styled.button`

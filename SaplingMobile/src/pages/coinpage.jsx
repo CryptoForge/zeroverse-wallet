@@ -12,6 +12,7 @@ import { setSelectCoin,
          setSynced,
          setZAddresses,
          setTAddresses,
+         setMenuReady,
          setRefreshAddresses,
          setWalletLoaded} from '../actions/Context'
 
@@ -158,6 +159,7 @@ class CoinPage extends React.Component {
             this.props.setZAddresses([])
             this.props.setTAddresses([])
             this.props.setRefreshAddresses(true)
+            this.props.setMenuReady(false)
 
             this.setCancelEnabled(true)
             this.props.setWalletLoaded(true)
@@ -195,6 +197,7 @@ class CoinPage extends React.Component {
               this.props.setZAddresses([])
               this.props.setTAddresses([])
               this.props.setRefreshAddresses(true)
+              this.props.setMenuReady(false)
             }
 
             this.props.setSaving(false)
@@ -233,6 +236,7 @@ class CoinPage extends React.Component {
               this.props.setZAddresses([])
               this.props.setTAddresses([])
               this.props.setPrivateKey('')
+              this.props.setMenuReady(false)
             }
 
             this.props.setSaving(false)
@@ -319,6 +323,7 @@ CoinPage.propTypes = {
   setWalletLoaded: PropTypes.func.isRequired,
   setZAddresses: PropTypes.func.isRequired,
   setTAddresses: PropTypes.func.isRequired,
+  setMenuReady: PropTypes.func.isRequired,
   setSynced: PropTypes.func.isRequired,
   setRefreshAddresses: PropTypes.func.isRequired,
   setAddress: PropTypes.func.isRequired,
@@ -353,6 +358,7 @@ function matchDispatchToProps (dispatch) {
       setSynced,
       setZAddresses,
       setTAddresses,
+      setMenuReady,
       setRefreshAddresses,
       setAddress,
       setBalance,

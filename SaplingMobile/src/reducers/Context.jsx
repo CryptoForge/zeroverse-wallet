@@ -21,7 +21,8 @@ import {
   SET_REFRESH_ADDRESS,
   SET_TADDRESSES,
   SET_ZADDRESSES,
-  SET_TX
+  SET_TX,
+  SET_MENU_READY
 
 } from '../actions/Context'
 
@@ -44,7 +45,8 @@ const initialContext = {
   refreshAddresses: false,
   zAddresses: [],
   tAddresses: [],
-  tx: null
+  tx: null,
+  menuReady: false
 
 }
 
@@ -144,6 +146,11 @@ export default function ContextReducer (state = initialContext, action) {
     case SET_TX:
       return Object.assign({}, state, {
         tx: action.tx
+      })
+
+    case SET_MENU_READY:
+      return Object.assign({}, state, {
+        menuReady: action.menuReady
       })
 
     default:

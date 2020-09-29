@@ -17,6 +17,7 @@ export const SET_REFRESH_ADDRESS = 'SET_CURRENT_REFRESH_ADDRESS'
 export const SET_TADDRESSES = 'SET_CURRENT_TADDRESSES'
 export const SET_ZADDRESSES = 'SET_CURRENT_ZADDRESSES'
 export const SET_TX = 'SET_CURRENT_TX'
+export const SET_MENU_READY = 'SET_CURRENT_MENU_READY'
 
 export function setActivePassword (activePassword) {
   return {
@@ -148,5 +149,12 @@ export function setTx (tx) {
   return {
     type: SET_TX,
     tx
+  }
+}
+
+export function setMenuReady (menuReady) {
+  return {
+    type: SET_MENU_READY,
+    menuReady
   }
 }
