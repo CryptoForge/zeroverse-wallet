@@ -10,6 +10,8 @@ import { setSelectCoin,
          setBalance,
          setPrivateKey,
          setSynced,
+         setZAddresses,
+         setTAddresses,
          setRefreshAddresses,
          setWalletLoaded} from '../actions/Context'
 
@@ -153,6 +155,8 @@ class CoinPage extends React.Component {
             this.props.setAddress('')
             this.props.setBalance(0)
             this.props.setPrivateKey('')
+            this.props.setZAddresses([])
+            this.props.setTAddresses([])
             this.props.setRefreshAddresses(true)
 
             this.setCancelEnabled(true)
@@ -188,9 +192,11 @@ class CoinPage extends React.Component {
               this.props.setAddress('')
               this.props.setBalance(0)
               this.props.setPrivateKey('')
+              this.props.setZAddresses([])
+              this.props.setTAddresses([])
               this.props.setRefreshAddresses(true)
             }
-            
+
             this.props.setSaving(false)
             this.setCancelEnabled(true)
 
@@ -224,6 +230,8 @@ class CoinPage extends React.Component {
               //Clear address list
               this.props.setAddress('')
               this.props.setBalance(0)
+              this.props.setZAddresses([])
+              this.props.setTAddresses([])
               this.props.setPrivateKey('')
             }
 
@@ -309,6 +317,8 @@ class CoinPage extends React.Component {
 CoinPage.propTypes = {
   setWalletPassPhrase: PropTypes.func.isRequired,
   setWalletLoaded: PropTypes.func.isRequired,
+  setZAddresses: PropTypes.func.isRequired,
+  setTAddresses: PropTypes.func.isRequired,
   setSynced: PropTypes.func.isRequired,
   setRefreshAddresses: PropTypes.func.isRequired,
   setAddress: PropTypes.func.isRequired,
@@ -341,6 +351,8 @@ function matchDispatchToProps (dispatch) {
       setWalletPassPhrase,
       setWalletLoaded,
       setSynced,
+      setZAddresses,
+      setTAddresses,
       setRefreshAddresses,
       setAddress,
       setBalance,
