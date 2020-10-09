@@ -5,7 +5,7 @@ var path = require('path');
 
 module.exports = {
   optimization: {
-    minimize: true,
+    minimize: false,
     minimizer: [
       new TerserPlugin({
         test: /\.(js|jsx)$/,

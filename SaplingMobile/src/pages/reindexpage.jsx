@@ -15,6 +15,7 @@ import { setReindexWallet,
 import { setSeedPhrase, setBirthday } from '../actions/Secrets'
 
 import { coins } from '../utils/coins.js'
+import { decrypt, saltHashPassword, KeySalt } from '../utils/hash.js'
 
 import {
     ReindexDiv,
@@ -119,57 +120,74 @@ class ReindexPage extends React.Component {
       const key = this.props.settings.currentCoin
       var seed
       var args
-      try {
-        args = [coins[key].litewallet[0]]
-        args.push(coins[key].addressParams)
-        args.push(this.props.secrets.seedPhrase)
-        args.push(this.state.birthday.toString())
-        seed = await restoreWallet(args)
+      var passPhrase
 
-        seed = JSON.parse(seed)
-        if (seed.seed != null) {
-          this.props.setSeedPhrase(seed.seed)
-          this.props.setBirthday(seed.birthday)
+      if (this.props.settings.passPhrase == null) {
+        this.setMsg('Zeroverse Master seed not set, Restart App!!!')
+      } else {
+        try {
+          const keyHash = saltHashPassword(this.props.context.activePassword, KeySalt)
+          passPhrase = decrypt(this.props.settings.passPhrase,keyHash)
+        } catch {
+          passPhrase = null
+        }
+      }
 
-          //Clear address list
-          this.props.setAddress('')
-          this.props.setBalance(0)
-          this.props.setPrivateKey('')
-          this.props.setRefreshAddresses(true)
+      if (passPhrase == null) {
+        this.setMsg('Zeroverse Master seed not set, Restart App!!!')
+      } else {
 
-          this.props.setSaving(false)
-          this.setCancelEnabled(true)
-          this.props.setReindexWallet(false)
-        } else {
-          this.setMsg('Failed, Reverting to Previous State...')
-          args = [coins[key].networkname]
-          args.push(coins[key].litewallet[0])
-          args.push(coins[key].addressParams)
-          seed = await initalizeWallet(args)
-          seed = JSON.parse(seed)
-          if (seed.seed != null) {
-            this.props.setSeedPhrase(seed.seed)
-            this.props.setBirthday(seed.birthday)
+          try {
+            args = [coins[key].litewallet[0]]
+            args.push(coins[key].addressParams)
+            args.push(passPhrase)
+            args.push(this.state.birthday.toString())
+            seed = await restoreWallet(args)
 
-            //Clear address list
-            this.props.setAddress('')
-            this.props.setBalance(0)
-            this.props.setPrivateKey('')
-            this.props.setRefreshAddresses(true)
+            seed = JSON.parse(seed)
+            if (seed.seed != null) {
+              this.props.setSeedPhrase(seed.seed)
+              this.props.setBirthday(seed.birthday)
 
-            this.props.setSaving(false)
-            this.setCancelEnabled(true)
-          } else {
+              //Clear address list
+              this.props.setAddress('')
+              this.props.setBalance(0)
+              this.props.setPrivateKey('')
+              this.props.setRefreshAddresses(true)
+
+              this.props.setSaving(false)
+              this.setCancelEnabled(true)
+              this.props.setReindexWallet(false)
+            } else {
+              this.setMsg('Failed, Reverting to Previous State...')
+              args = [coins[key].networkname]
+              args.push(coins[key].litewallet[0])
+              args.push(coins[key].addressParams)
+              seed = await initalizeWallet(args)
+              seed = JSON.parse(seed)
+              if (seed.seed != null) {
+                this.props.setSeedPhrase(seed.seed)
+                this.props.setBirthday(seed.birthday)
+
+                //Clear address list
+                this.props.setAddress('')
+                this.props.setBalance(0)
+                this.props.setPrivateKey('')
+                this.props.setRefreshAddresses(true)
+
+                this.props.setSaving(false)
+                this.setCancelEnabled(true)
+              } else {
+                this.setMsg('Catastrophic Error, Restart App!!!')
+              }
+
+            }
+
+          } catch {
             this.setMsg('Catastrophic Error, Restart App!!!')
           }
 
-        }
-
-      } catch {
-        this.setMsg('Catastrophic Error, Restart App!!!')
       }
-
-
     }
 
     render () {

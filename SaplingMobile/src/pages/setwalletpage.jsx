@@ -41,7 +41,8 @@ class SetWalletPage extends React.Component {
       openSection: 1,
       tempSeedPhrase: '',
       tempBirthday: 0,
-      tempSeedPhraseInvalid: ''
+      tempSeedPhraseInvalid: '',
+      createWallet: false
     }
 
     this.setTempSeedPhraseInvalid = this.setTempSeedPhraseInvalid.bind(this)
@@ -71,11 +72,13 @@ class SetWalletPage extends React.Component {
   setTempSeedPhraseInvalid(b) {
     if (b) {
       this.setState({
-        tempSeedPhraseInvalid: 'Seed Phrase Invalid!!!'
+        tempSeedPhraseInvalid: 'Seed Phrase Invalid!!!',
+        createWallet: false
       })
     } else {
       this.setState({
-        tempSeedPhraseInvalid: ''
+        tempSeedPhraseInvalid: '',
+        createWallet: true
       })
     }
   }
@@ -237,7 +240,7 @@ class SetWalletPage extends React.Component {
       const mainStyle =  this.props.context.qrScanning ? {opacity: '0.0', display: 'none'} : {opacity: '1.0'}
 
       var buttonDisplay = 'none'
-      if (this.state.tempSeedPhrase.length >= 16 && this.state.currentHeight != 0) {
+      if (this.state.createWallet) {
         buttonDisplay = 'visible'
       }
 
@@ -256,6 +259,7 @@ class SetWalletPage extends React.Component {
               </WalletRecoverOldButton>
             </WalletSection>
             break
+
         case 2: //Create New Wallet
           walletSection =
             <WalletSection>
@@ -315,6 +319,7 @@ class SetWalletPage extends React.Component {
                 {'Wallet Birthday'}
               </WalletBirthdayTitle>
               <WalletBirthday
+                type = "number"
                 value={this.state.tempBirthday}
                 onChange = { (e) => {
                   this.setTempBirthday(e.target.value)

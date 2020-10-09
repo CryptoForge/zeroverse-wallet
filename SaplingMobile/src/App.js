@@ -32,7 +32,12 @@ import {
 import { coins } from './utils/coins.js'
 import { getTheme } from './utils/theme.js'
 
-import { ZERO_MOBILE_SAVE_PATH, readFromFile } from './utils/persistentStorage'
+// import {
+//   getLocalFileSystemURL,
+//   writeDataToFile
+// } from './utils/fileops'
+
+import { ZERO_MOBILE_SAVE_PATH, readFromFile, getLocalFileSystemURL, writeDataToFile } from './utils/persistentStorage'
 //import ZERO_LOGO from './assets/zero-logo-white.png'
 
 import {
@@ -84,12 +89,13 @@ class App extends React.Component {
       data: null
     }
 
+    this.savingFile = false
     this.initalize = this.initalize.bind(this)
     this.runInitalize = this.runInitalize.bind(this)
     this.setScreenSize = this.setScreenSize.bind(this)
     this.setRotate = this.setRotate.bind(this)
     this.backButtonHandler = this.backButtonHandler.bind(this)
-
+    this.saveData = this.saveData.bind(this)
     this.firebase = this.firebase.bind(this)
   }
 
@@ -112,7 +118,6 @@ class App extends React.Component {
   }
 
   runInitalize() {
-    console.log(this.props.context.activePassword)
     clearInterval(this.InitId)
 
     if (this.props.context.activePassword == '') {
@@ -134,7 +139,6 @@ class App extends React.Component {
     if (data != null) {
       if (data.settings.passPhrase !== undefined && data.settings.passPhrase != null) {
         var phrase = decrypt(data.settings.passPhrase, keyHash)
-        console.log(phrase)
         var seedCheck = await checkSeedPhrase(phrase)
         seedCheck = JSON.parse(seedCheck)
         if (seedCheck.checkSeedPhrase == 'Ok') {
@@ -177,25 +181,22 @@ class App extends React.Component {
 
           //set passphase on existing wallets
           if (this.props.settings.passPhrase == null) {
-            console.log(this.props.settings.passPhrase)
-            console.log(seed.seed)
             var pass = encrypt(seed.seed, keyHash)
-            console.log(pass)
             this.props.setWalletPassPhrase(pass)
-            console.log(this.props.settings.passPhrase)
             this.setState({
               hasExistingWallet: true
             })
           } else {
             var pp = decrypt(this.props.settings.passPhrase, keyHash)
-            console.log(pp)
             if (pp != seed.seed) {
               alert("WARNING!!!" + args[0] + " seed phrase does not match the ZeroVerse's Master seed phrase.")
             }
           }
         }
       } catch (err) {
-        console.log(err)
+        if (process.env.NODE_ENV != 'production') {
+          console.log(err)
+        }
       }
 
     } else {
@@ -211,7 +212,9 @@ class App extends React.Component {
           this.props.setBirthday(seed.birthday)
         }
       } catch (err) {
-        console.log(err)
+        if (process.env.NODE_ENV != 'production') {
+          console.log(err)
+        }
       }
     }
 
@@ -226,7 +229,26 @@ class App extends React.Component {
 
   }
 
+  async saveData () {
+    if (!this.savingFile) {
+      if (this.props.settings.passPhrase !== null && this.props.settings.password !== null && this.props.settings.saveData === true) {
+        // Write to file
+        this.savingFile = true
+        try {
+          const data = {settings: this.props.settings}
+          const file = await getLocalFileSystemURL(ZERO_MOBILE_SAVE_PATH)
+          await writeDataToFile(file, data)
+          this.savingFile = false
+        } catch {
+          this.savingFile = false
+        }
+      }
+    }
+  }
+
+
   backButtonHandler () {
+
     if (this.props.mainSubPage.mainPage != 'visible') {
       this.props.setMainPage('visible')
       this.props.setSendPage('none')
@@ -283,11 +305,11 @@ class App extends React.Component {
 
       //hacky fix to duplicate json data saved to setting file on iOS.
       //investigate permanent fix
-      if (data.length>0) {
-        while (data.indexOf('secretPhrase') !== data.lastIndexOf('secretPhrase')) {
-            data = data.substring(0, data.lastIndexOf('secretPhrase')-4)
-        }
-      }
+      // if (data.length>0) {
+      //   while (data.indexOf('secretPhrase') !== data.lastIndexOf('secretPhrase')) {
+      //       data = data.substring(0, data.lastIndexOf('secretPhrase')-4)
+      //   }
+      // }
 
       this.setState({stringData: 'JSON file ' + data})
 
@@ -365,6 +387,7 @@ class App extends React.Component {
   }
 
   render() {
+    this.saveData()
 
     var screenDim = this.props.context.dimensions
 
@@ -411,7 +434,7 @@ class App extends React.Component {
           this.runInitalize()
         }} />
       } else {
-        if(!this.state.hasInputPin)
+        if(!this.state.hasInputPin) {
           app = <LoginPage onComplete={() => {
             this.setState({
               hasInputPin: true,
@@ -419,9 +442,10 @@ class App extends React.Component {
             })
             this.runInitalize()
           }} />
-        else {
+        } else {
           if(!this.state.hasExistingWallet) {
             app = <SetWalletPage setHasExistingWallet={(v) => this.setState({ hasExistingWallet: v })}/>
+            this.props.setSeedPhrase('')
           } else {
             if (this.props.context.selectCoin) {
               app = <CoinPage />

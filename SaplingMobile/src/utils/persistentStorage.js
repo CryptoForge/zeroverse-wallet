@@ -20,36 +20,66 @@ export function readFromFile (fileName, onSuccess, onFail) {
   )
 }
 
-export function writeToFile (fileName, data) {
-  data = JSON.stringify(data, 4, '\t')
-  window.resolveLocalFileSystemURL(
-    cordova.file.dataDirectory,
-    function (directoryEntry) {
-      directoryEntry.getFile(
-        fileName,
-        { create: true },
-        function (fileEntry) {
-          fileEntry.createWriter(function (fileWriter) {
-            fileWriter.onwriteend = function () {
-              // for real-world usage, you might consider passing a success callback
-              // alert('Write of file "' + fileName + '"" completed.')
-            }
-
-            fileWriter.onerror = function () {
-              // you could hook this up with our global error handler, or pass in an error callback
-              alert('WARNING. YOUR SECRET PHRASE COULD NOT BE SAVED. PRIVATE KEYS SAVING FAILED.')
-            }
-
-            var blob = new Blob([data], { type: 'text/plain' })
-            fileWriter.write(blob)
-          }, errorHandler.bind(null, fileName))
-        },
-        errorHandler.bind(null, fileName)
-      )
-    },
-    errorHandler.bind(null, fileName)
-  )
+export function getLocalFileSystemURL(fileName) {
+  const pathToFile = cordova.file.dataDirectory + fileName
+  return new Promise((resolve, reject) => {
+    window.resolveLocalFileSystemURL(pathToFile, (onSuccess) => {
+      resolve(onSuccess)
+    }, (onFail) => {
+      reject(onFail)
+    })
+  })
 }
+
+export function writeDataToFile(fileEntry, data) {
+  data = JSON.stringify(data, 4, '\t')
+  return new Promise((resolve, reject) => {
+    fileEntry.createWriter((fileWriter) => {
+
+      fileWriter.onwriteend = function (e) {
+        resolve(e)
+      }
+      fileWriter.onerror = function (e) {
+        reject(e)
+      }
+      var blob = new Blob([data], { type: 'text/plain' })
+      fileWriter.write(blob)
+
+    }, (onFail) => {
+      reject(onFail)
+    })
+  })
+}
+// export function writeToFile (fileName, data) {
+//   data = JSON.stringify(data, 4, '\t')
+//   window.resolveLocalFileSystemURL(
+//     cordova.file.dataDirectory,
+//     function (directoryEntry) {
+//       directoryEntry.getFile(
+//         fileName,
+//         { create: true },
+//         function (fileEntry) {
+//           fileEntry.createWriter(function (fileWriter) {
+//             fileWriter.onwriteend = function () {
+//               // for real-world usage, you might consider passing a success callback
+//               // alert('Write of file "' + fileName + '"" completed.')
+//             }
+//
+//             fileWriter.onerror = function () {
+//               // you could hook this up with our global error handler, or pass in an error callback
+//               alert('WARNING. YOUR SECRET PHRASE COULD NOT BE SAVED. PRIVATE KEYS SAVING FAILED.')
+//             }
+//
+//             var blob = new Blob([data], { type: 'text/plain' })
+//             fileWriter.write(blob)
+//           }, errorHandler.bind(null, fileName))
+//         },
+//         errorHandler.bind(null, fileName)
+//       )
+//     },
+//     errorHandler.bind(null, fileName)
+//   )
+// }
 
 const errorHandler = function (fileName, e) {
   var msg = ''
