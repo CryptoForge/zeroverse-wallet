@@ -3,6 +3,7 @@
 import '@babel/polyfill'
 
 import {
+  SET_FIREBASE,
   SET_ACTIVE_PASSWORD,
   SET_ADDRESS,
   SET_PRIVATE_KEY,
@@ -24,9 +25,11 @@ import {
   SET_TX,
   SET_MENU_READY
 
+
 } from '../actions/Context'
 
 const initialContext = {
+  firebase: false,
   activePassword: '',
   address: '',
   privateKey: '',
@@ -52,6 +55,11 @@ const initialContext = {
 
 export default function ContextReducer (state = initialContext, action) {
   switch (action.type) {
+
+    case SET_FIREBASE:
+      return Object.assign({}, state, {
+        firebase: action.firebase
+      })
 
     case SET_ACTIVE_PASSWORD:
       return Object.assign({}, state, {

@@ -6,7 +6,7 @@ import { connect } from 'react-redux'
 
 import { ThemeProvider } from 'styled-components';
 
-import { setDimensions, setSelectCoin, setReindexWallet, setWalletLoaded } from './actions/Context'
+import { setDimensions, setSelectCoin, setReindexWallet, setWalletLoaded, setFirebase } from './actions/Context'
 
 import { setSeedPhrase, setBirthday } from './actions/Secrets'
 import {
@@ -90,6 +90,7 @@ class App extends React.Component {
     this.setRotate = this.setRotate.bind(this)
     this.backButtonHandler = this.backButtonHandler.bind(this)
 
+    this.firebase = this.firebase.bind(this)
   }
 
   setScreenSize() {
@@ -247,8 +248,32 @@ class App extends React.Component {
     }
   }
 
+  firebase (b) {
+    this.props.setFirebase(b)
+  }
 
   componentDidMount() {
+
+    var shouldSetEnabled = true;
+
+    try {
+      FirebasePlugin.setCrashlyticsCollectionEnabled(shouldSetEnabled, function(){
+          this.firebase(true)
+          if (process.env.NODE_ENV != 'production') {
+            console.log("Crashlytics data collection is enabled");
+          }
+      }, function(error){
+          this.firebase(false)
+          if (process.env.NODE_ENV != 'production') {
+            console.error("Crashlytics data collection couldn't be enabled: "+error);
+          }
+      });
+    } catch {
+      this.firebase(false)
+      if (process.env.NODE_ENV != 'production') {
+        console.log("Firebase Crashlytics data collection couldn't be enabled")
+      }
+    }
 
     document.addEventListener('backbutton', this.backButtonHandler, false)
 
@@ -431,6 +456,7 @@ class App extends React.Component {
 
 
 App.propTypes = {
+  setFirebase: PropTypes.func.isRequired,
   setWalletLoaded: PropTypes.func.isRequired,
   setSelectCoin: PropTypes.func.isRequired,
   setReindexWallet: PropTypes.func.isRequired,
@@ -471,6 +497,7 @@ function mapStateToProps (state) {
 function matchDispatchToProps (dispatch) {
   return bindActionCreators(
     {
+      setFirebase,
       setWalletLoaded,
       setSelectCoin,
       setReindexWallet,

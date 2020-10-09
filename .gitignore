@@ -61,5 +61,8 @@ Pirate_ux
 #Android Keystore
 *.keystore
 
+#firebase
+google-services.json
+
 #Apple Files
 .DS_Store
