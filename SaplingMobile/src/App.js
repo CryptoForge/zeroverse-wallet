@@ -302,14 +302,6 @@ class App extends React.Component {
       // If errors while we're reading the JSOn
       // then just assume its empty
 
-      //hacky fix to duplicate json data saved to setting file on iOS.
-      //investigate permanent fix
-      // if (data.length>0) {
-      //   while (data.indexOf('secretPhrase') !== data.lastIndexOf('secretPhrase')) {
-      //       data = data.substring(0, data.lastIndexOf('secretPhrase')-4)
-      //   }
-      // }
-
       this.setState({stringData: 'JSON file ' + data})
 
       try {
