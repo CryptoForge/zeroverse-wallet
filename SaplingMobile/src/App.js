@@ -32,6 +32,7 @@ import {
 import { coins } from './utils/coins.js'
 import { getTheme } from './utils/theme.js'
 
+import { crashlyticsEnabled } from './utils/firebase.js'
 // import {
 //   getLocalFileSystemURL,
 //   writeDataToFile
@@ -96,7 +97,7 @@ class App extends React.Component {
     this.setRotate = this.setRotate.bind(this)
     this.backButtonHandler = this.backButtonHandler.bind(this)
     this.saveData = this.saveData.bind(this)
-    this.firebase = this.firebase.bind(this)
+    this.enableFirebase = this.enableFirebase.bind(this)
   }
 
   setScreenSize() {
@@ -269,32 +270,24 @@ class App extends React.Component {
     }
   }
 
-  firebase (b) {
-    this.props.setFirebase(b)
+  async enableFirebase(b) {
+    try {
+      await crashlyticsEnabled(b)
+      if (process.env.NODE_ENV != 'production') {
+        console.log("Crashlytics data collection is enabled")
+      }
+      this.props.setFirebase(true)
+    } catch (err) {
+      if (process.env.NODE_ENV != 'production') {
+        console.error("Crashlytics data collection couldn't be enabled "+err)
+      }
+        this.props.setFirebase(false)
+    }
   }
 
   componentDidMount() {
 
-    var shouldSetEnabled = true;
-
-    try {
-      FirebasePlugin.setCrashlyticsCollectionEnabled(shouldSetEnabled, function(){
-          this.firebase(true)
-          if (process.env.NODE_ENV != 'production') {
-            console.log("Crashlytics data collection is enabled");
-          }
-      }, function(error){
-          this.firebase(false)
-          if (process.env.NODE_ENV != 'production') {
-            console.error("Crashlytics data collection couldn't be enabled: "+error);
-          }
-      });
-    } catch {
-      this.firebase(false)
-      if (process.env.NODE_ENV != 'production') {
-        console.log("Firebase Crashlytics data collection couldn't be enabled")
-      }
-    }
+    this.enableFirebase(true)
 
     document.addEventListener('backbutton', this.backButtonHandler, false)
 
@@ -375,6 +368,10 @@ class App extends React.Component {
 
     this.props.setSaveData(true)
 
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this.InitId)
   }
 
   render() {
