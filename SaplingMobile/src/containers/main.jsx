@@ -13,7 +13,8 @@ import {
   setZerInCurrencyValue,
   setSelectCoin,
   setReindexWallet,
-  setSaving } from '../actions/Context'
+  setSaving,
+  setRefreshAddresses } from '../actions/Context'
 
 import {
   setMainPage,
@@ -116,15 +117,20 @@ class Main extends React.Component {
         //     }
         // })
       }
+
+      clearTimeout(this.PriceID)
+      this.PriceID = setTimeout(
+        () => this.getZerPrice(),
+        30000
+      )
     }
 
     async rescanWallet() {
-      clearInterval(this.RescanID)
       try {
         var status = await syncStatus()
         status = JSON.parse(status)
         if (this.props.context.walletInUse) {
-          this.RescanID = setInterval(
+          this.RescanID = setTimeout(
             () => this.rescanWallet(),
             10
           )
@@ -135,6 +141,7 @@ class Main extends React.Component {
           await clear()
           this.props.setSynced(false)
           sync()
+          this.props.setRefreshAddresses(true)
           this.props.setSaving(false)
         }
       } catch {
@@ -145,18 +152,13 @@ class Main extends React.Component {
 
     componentDidMount() {
       this.getZerPrice()
-      this.PriceID = setInterval(
-        () => this.getZerPrice(),
-        30000
-      )
 
       window.addEventListener("click", this.closeMenu)
 
     }
 
     componentWillUnmount() {
-      clearInterval(this.PriceID)
-      clearInterval(this.RescanID)
+      clearTimeout(this.PriceID)
     }
 
 
@@ -288,6 +290,7 @@ class Main extends React.Component {
 
 
 Main.propTypes = {
+  setRefreshAddresses: PropTypes.func.isRequired,
   setSaving: PropTypes.func.isRequired,
   setSynced: PropTypes.func.isRequired,
   setZerInBtcValue: PropTypes.func.isRequired,
@@ -315,6 +318,7 @@ function mapStateToProps (state) {
 function matchDispatchToProps (dispatch) {
   return bindActionCreators(
     {
+      setRefreshAddresses,
       setSaving,
       setSynced,
       setZerInBtcValue,

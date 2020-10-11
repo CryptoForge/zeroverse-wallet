@@ -55,12 +55,11 @@ class Seed extends React.Component {
 
     beginFlash () {
       this.setState({flash: true})
-      this.setFlashReceiveId = setInterval(() => this.removeFlash(),125)
+      this.setFlashReceiveId = setTimeout(() => this.removeFlash(),125)
     }
 
     removeFlash () {
       this.setState({flash: false})
-      clearInterval(this.setFlashReceiveId)
     }
 
     async setPassword (p) {

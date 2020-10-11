@@ -194,24 +194,30 @@ class TransactionList extends React.Component {
             </ListDiv>
         )
         this.props.setWalletInUse(false)
+
+        clearTimeout(this.ProcessID)
+        if (this.props.context.synced) {
+          this.ProcessID = setTimeout(
+            () => this.createTransactionList(),
+            15000
+          )
+        } else {
+          this.ProcessID = setTimeout(
+            () => this.createTransactionList(),
+            2000
+          )
+        }
     }
 
 
     componentDidMount() {
       this.createTransactionList()
-
-      this.ProcessID = setInterval(
-        () => this.createTransactionList(),
-        5000
-      );
-
     }
 
     componentWillUnmount() {
-      clearInterval(this.ProcessID)
+      clearTimeout(this.ProcessID)
     }
-
-
+    
     render () {
         return (
           <div>

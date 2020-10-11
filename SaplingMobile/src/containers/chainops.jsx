@@ -45,7 +45,10 @@ class ChainOps extends React.Component {
       chainHeight: 1,
       syncing: true,
       walletError: false,
-      errorMsg: ''
+      errorMsg: '',
+      syncWalletTimer: null,
+      syncStatus: null
+
     }
 
     this.getWalletStatus = this.getWalletStatus.bind(this)
@@ -70,21 +73,28 @@ class ChainOps extends React.Component {
         }
       }
 
-      // if (this.props.context.synced) {
-      //   clearInterval(this.syncWalletTimer)
-      //
-      //   this.syncWalletTimer = setInterval(
-      //     () => this.getWalletStatus(),
-      //     15000
-      //   );
-      // } else {
-      //   clearInterval(this.syncWalletTimer)
-      //
-      //   this.syncWalletTimer = setInterval(
-      //     () => this.getWalletStatus(),
-      //     2000
-      //   );
-      // }
+      if (this.props.context.synced) {
+
+        clearTimeout(this.state.syncWalletTimer)
+        const syncWalletTimerIDLong = setTimeout(
+          () => {
+            console.log('Running 15 Second Interval - Sync Timer')
+            this.getWalletStatus()
+          },
+          15000
+        );
+        this.setState({syncWalletTimer: syncWalletTimerIDLong})
+      } else {
+
+        const syncWalletTimerIDShort = setTimeout(
+          () => {
+            console.log('Running 1 Second Interval - Sync Timer')
+            this.getWalletStatus()
+          },
+          1000
+        );
+        this.setState({syncWalletTimer: syncWalletTimerIDShort})
+      }
 
       this.props.setWalletInUse(false)
     }
@@ -212,21 +222,29 @@ class ChainOps extends React.Component {
         this.props.setWalletInUse(false)
       }
 
-      // if (this.props.context.synced) {
-      //   clearInterval(this.updateTimer)
-      //
-      //   this.updateTimer = setInterval(
-      //     () => this.updateWallet(),
-      //     15000
-      //   );
-      // } else {
-      //   clearInterval(this.updateTimer)
-      //
-      //   this.updateTimer = setInterval(
-      //     () => this.updateWallet(),
-      //     5000
-      //   );
-      // }
+      console.log(this.props.context)
+      if (this.props.context.synced) {
+        clearTimeout(this.state.updateTimer)
+        const updateTimerIDLong = setTimeout(
+          () => {
+            console.log('Running 15 Second Interval - Update Timer')
+            this.updateWallet()
+          },
+          15000
+        );
+        this.setState({updateTimer: updateTimerIDLong})
+
+      } else {
+
+        const updateTimerIDShort = setTimeout(
+          () => {
+            console.log('Running 3 Second Interval - Update Timer')
+            this.updateWallet()
+          },
+          3000
+        );
+        this.setState({updateTimer: updateTimerIDShort})
+      }
     }
 
 
@@ -238,22 +256,11 @@ class ChainOps extends React.Component {
 
       this.getWalletStatus()
       this.updateWallet()
-
-      this.syncWalletTimer = setInterval(
-        () => this.getWalletStatus(),
-        15000
-      );
-
-      this.updateTimer = setInterval(
-        () => this.updateWallet(),
-        5000
-      );
-
     }
 
     componentWillUnmount() {
-      clearInterval(this.syncWalletTimer)
-      clearInterval(this.updateTimer)
+      clearTimeout(this.state.updateTimer)
+      clearTimeout(this.state.syncWalletTimer)
     }
 
 
@@ -306,6 +313,7 @@ class ChainOps extends React.Component {
 
       if (this.props.context.refreshAddresses) {
         this.updateWallet()
+        this.getWalletStatus()
         this.props.setRefreshAddresses(false)
       }
 

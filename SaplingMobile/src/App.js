@@ -118,10 +118,9 @@ class App extends React.Component {
   }
 
   runInitalize() {
-    clearInterval(this.InitId)
-
     if (this.props.context.activePassword == '') {
-      this.InitId = setInterval(
+      clearTimeout(this.InitId)
+      this.InitId = setTimeout(
         () => this.runInitalize(),
         10
       )
