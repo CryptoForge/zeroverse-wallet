@@ -150,7 +150,9 @@ class TransactionList extends React.Component {
 
           }
         } catch (err) {
-          console.log(err.description)
+          if (process.env.NODE_ENV != 'production') {
+            console.log(err.description)
+          }
         }
 
           this.setTransactions(transactions)
@@ -198,13 +200,15 @@ class TransactionList extends React.Component {
         clearTimeout(this.ProcessID)
         if (this.props.context.synced) {
           this.ProcessID = setTimeout(
-            () => this.createTransactionList(),
-            15000
+            () => {
+              this.createTransactionList()
+            },15000
           )
         } else {
           this.ProcessID = setTimeout(
-            () => this.createTransactionList(),
-            2000
+            () => {
+              this.createTransactionList()
+            },2000
           )
         }
     }
@@ -217,7 +221,7 @@ class TransactionList extends React.Component {
     componentWillUnmount() {
       clearTimeout(this.ProcessID)
     }
-    
+
     render () {
         return (
           <div>

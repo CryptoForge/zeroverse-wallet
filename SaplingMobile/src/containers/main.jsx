@@ -120,8 +120,9 @@ class Main extends React.Component {
 
       clearTimeout(this.PriceID)
       this.PriceID = setTimeout(
-        () => this.getZerPrice(),
-        30000
+        () => {
+          this.getZerPrice()
+        },30000
       )
     }
 
@@ -129,10 +130,12 @@ class Main extends React.Component {
       try {
         var status = await syncStatus()
         status = JSON.parse(status)
+        clearTimeout(this.RescanID)
         if (this.props.context.walletInUse) {
           this.RescanID = setTimeout(
-            () => this.rescanWallet(),
-            10
+            () => {
+              this.rescanWallet()
+            },10
           )
         } else if (status.syncing == "true") {
           this.props.setSynced(false)

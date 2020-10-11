@@ -47,8 +47,8 @@ class ChainOps extends React.Component {
       walletError: false,
       errorMsg: '',
       syncWalletTimer: null,
-      syncStatus: null
-
+      syncStatus: null,
+      saveWalletCounter: 0
     }
 
     this.getWalletStatus = this.getWalletStatus.bind(this)
@@ -63,39 +63,46 @@ class ChainOps extends React.Component {
 
         if (walletStatus.syncing != "true") {
 
-          if (!this.state.syncing && !this.props.context.synced) {
+          if (!this.state.syncing && !this.props.context.synced && this.props.context.menuReady) {
             this.props.setSynced(true)
           }
 
           this.setState({
             syncing: false
           })
+        } else {
+          if (walletStatus.total_blocks > walletStatus.synced_blocks + 10) {
+            this.props.setSynced(false)
+            this.setState({
+              syncing: true
+            })
+          }
         }
       }
 
-      if (this.props.context.synced) {
-
-        clearTimeout(this.state.syncWalletTimer)
-        const syncWalletTimerIDLong = setTimeout(
-          () => {
-            console.log('Running 15 Second Interval - Sync Timer')
-            this.getWalletStatus()
-          },
-          15000
-        );
-        this.setState({syncWalletTimer: syncWalletTimerIDLong})
-      } else {
-
-        const syncWalletTimerIDShort = setTimeout(
-          () => {
-            console.log('Running 1 Second Interval - Sync Timer')
-            this.getWalletStatus()
-          },
-          1000
-        );
-        this.setState({syncWalletTimer: syncWalletTimerIDShort})
+      var mainPageOpen = true
+      if (this.props.context.selectCoin || !this.props.context.walletLoaded || this.props.context.reindexWallet) {
+        mainPageOpen = false
       }
 
+      clearTimeout(this.state.syncWalletTimer)
+      if (this.props.context.synced) {
+        if (mainPageOpen) {
+          const syncWalletTimerIDLong = setTimeout(
+            () => {
+              this.getWalletStatus()
+            },15000)
+          this.setState({syncWalletTimer: syncWalletTimerIDLong})
+        }
+      } else {
+        if (mainPageOpen) {
+          const syncWalletTimerIDShort = setTimeout(
+            () => {
+              this.getWalletStatus()
+            },1000)
+          this.setState({syncWalletTimer: syncWalletTimerIDShort})
+        }
+      }
       this.props.setWalletInUse(false)
     }
 
@@ -103,15 +110,14 @@ class ChainOps extends React.Component {
       if (!this.props.context.saving) {
         this.props.setWalletInUse(true)
 
-        if (this.props.context.synced) {
-          await sync()
-        } else {
-          sync()
-        }
+        sync()
 
-        this.props.setSaving(true)
-        await save(coins[this.props.settings.currentCoin].networkname)
-        this.props.setSaving(false)
+        if (this.state.saveWalletCounter > 30) {
+          this.props.setSaving(true)
+          await save(coins[this.props.settings.currentCoin].networkname)
+          this.setState({saveWalletCounter: 0})
+          this.props.setSaving(false)
+        }
 
         var walletInfo = await info()
         try {
@@ -128,6 +134,7 @@ class ChainOps extends React.Component {
         }
 
         var walletBalance = await balance()
+
         try {
           walletBalance = JSON.parse(walletBalance)
         } catch {
@@ -138,6 +145,7 @@ class ChainOps extends React.Component {
         }
 
         var walletStatus = await syncStatus()
+
         try {
           walletStatus = JSON.parse(walletStatus)
         } catch {
@@ -222,28 +230,40 @@ class ChainOps extends React.Component {
         this.props.setWalletInUse(false)
       }
 
-      console.log(this.props.context)
+      var mainPageOpen = true
+      if (this.props.context.selectCoin) {
+        mainPageOpen = false
+      } else if (!this.props.context.walletLoaded) {
+        mainPageOpen = false
+      } else if ( this.props.context.reindexWallet) {
+        mainPageOpen = false
+      }
+
+      clearTimeout(this.state.updateTimer)
       if (this.props.context.synced) {
-        clearTimeout(this.state.updateTimer)
-        const updateTimerIDLong = setTimeout(
-          () => {
-            console.log('Running 15 Second Interval - Update Timer')
-            this.updateWallet()
-          },
-          15000
-        );
-        this.setState({updateTimer: updateTimerIDLong})
-
+        if (mainPageOpen) {
+          const updateTimerIDLong = setTimeout(
+            () => {
+              const walletCount = this.state.saveWalletCounter + 15
+              this.setState({saveWalletCounter: walletCount})
+              this.updateWallet()
+            },
+            15000
+          )
+          this.setState({updateTimer: updateTimerIDLong})
+        }
       } else {
-
-        const updateTimerIDShort = setTimeout(
-          () => {
-            console.log('Running 3 Second Interval - Update Timer')
-            this.updateWallet()
-          },
-          3000
-        );
-        this.setState({updateTimer: updateTimerIDShort})
+        if (mainPageOpen) {
+          const updateTimerIDShort = setTimeout(
+            () => {
+              const walletCount = this.state.saveWalletCounter + 3
+              this.setState({saveWalletCounter: walletCount})
+              this.updateWallet()
+            },
+            3000
+          )
+          this.setState({updateTimer: updateTimerIDShort})
+        }
       }
     }
 

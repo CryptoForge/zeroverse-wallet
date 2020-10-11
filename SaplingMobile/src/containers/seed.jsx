@@ -80,9 +80,10 @@ class Seed extends React.Component {
             this.setState({
               seed: walletSeed
             })
-            console.log(this.state.seed)
           } catch (e) {
-            console.log(e.description)
+            if (process.env.NODE_ENV != 'production') {
+              console.log(e.description)
+            }
           }
 
         } else {

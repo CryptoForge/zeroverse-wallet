@@ -186,7 +186,9 @@ class SetWalletPage extends React.Component {
         }
 
       } catch (err) {
-        console.log(err.description)
+        if (process.env.NODE_ENV != 'production') {
+          console.log(err.description)
+        }
       }
     } else {
       this.setSection(s)
@@ -199,7 +201,9 @@ class SetWalletPage extends React.Component {
     try {
       seed = await getSeedPhrase()
     } catch (err) {
-      console.log(err.description)
+      if (process.env.NODE_ENV != 'production') {
+        console.log(err.description)
+      }
     }
     seed = JSON.parse(seed)
     this.setTempSeedPhrase(seed.seedPhrase)

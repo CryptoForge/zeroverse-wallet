@@ -12,13 +12,14 @@ import { setAddress,
          setPrivateKey,
          setRefreshAddresses,
          setTAddresses,
-         setZAddresses } from '../actions/Context'
+         setZAddresses,
+         setSaving } from '../actions/Context'
 
 import {
   setMainPage,
   setReceivePage} from '../actions/MainSubPage'
 
-import { newTAddress, newZAddress, privateKey, balance } from '../utils/litewallet'
+import { newTAddress, newZAddress, privateKey, balance, save } from '../utils/litewallet'
 
 import {
     ReceiveGrid,
@@ -68,25 +69,31 @@ class Receive extends React.Component {
     async getNewTAddress() {
         var addr = await newTAddress()
         addr = JSON.parse(addr)
-        console.log(addr)
         this.getAddresses()
         this.props.setAddress(addr[0])
         this.props.setBalance(0)
         var pk = await privateKey(addr[0])
         pk = JSON.parse(pk)
         this.props.setPrivateKey(pk[0].private_key)
+
+        this.props.setSaving(true)
+        await save(coins[this.props.settings.currentCoin].networkname)
+        this.props.setSaving(false)
     }
 
     async getNewZAddress() {
         var addr = await newZAddress()
         addr = JSON.parse(addr)
-        console.log(addr)
         this.getAddresses()
         this.props.setAddress(addr[0])
         this.props.setBalance(0)
         var pk = await privateKey(addr[0])
         pk = JSON.parse(pk)
         this.props.setPrivateKey(pk[0].private_key)
+
+        this.props.setSaving(true)
+        await save(coins[this.props.settings.currentCoin].networkname)
+        this.props.setSaving(false)
     }
 
     async getAddresses() {
@@ -183,14 +190,7 @@ class Receive extends React.Component {
               <ReceiveTitle>
                 {'Full Address'}
               </ReceiveTitle>
-              <ReceiveAddressTextArea flash = {this.state.flash}
-                value={address}
-                onChange={() => {
-                  //console.log('address text area is static')
-                  }
-                }
-                >
-              </ReceiveAddressTextArea>
+              <ReceiveAddressTextArea flash = {this.state.flash} value={address}/>
 
               <ReceiveQR>
                 <QRCode value={address}
@@ -226,6 +226,7 @@ class Receive extends React.Component {
 }
 
 Receive.propTypes = {
+  setSaving: PropTypes.func.isRequired,
   setRefreshAddresses: PropTypes.func.isRequired,
   setTAddresses: PropTypes.func.isRequired,
   setZAddresses: PropTypes.func.isRequired,
@@ -250,6 +251,7 @@ function mapStateToProps (state) {
 function matchDispatchToProps (dispatch) {
   return bindActionCreators(
     {
+      setSaving,
       setRefreshAddresses,
       setTAddresses,
       setZAddresses,

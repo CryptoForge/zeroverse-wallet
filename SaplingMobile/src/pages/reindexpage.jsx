@@ -10,6 +10,7 @@ import { setReindexWallet,
          setAddress,
          setBalance,
          setPrivateKey,
+         setMenuReady,
          setRefreshAddresses } from '../actions/Context'
 
 import { setSeedPhrase, setBirthday } from '../actions/Secrets'
@@ -35,7 +36,9 @@ import {
 
 import RingSpinner from '../containers/spinner'
 
-import { initalizeWallet,
+import { sync,
+         syncStatus,
+         initalizeWallet,
          restoreWallet} from '../utils/litewallet'
 
 class ReindexPage extends React.Component {
@@ -115,7 +118,6 @@ class ReindexPage extends React.Component {
 
     async reInitalize () {
       this.props.setSaving(true)
-      this.props.setSynced(false)
       this.setMsg('Re-Initalizing Wallet...')
       const key = this.props.settings.currentCoin
       var seed
@@ -146,6 +148,9 @@ class ReindexPage extends React.Component {
 
             seed = JSON.parse(seed)
             if (seed.seed != null) {
+              sync()
+              await syncStatus()
+              this.props.setSynced(false)
               this.props.setSeedPhrase(seed.seed)
               this.props.setBirthday(seed.birthday)
 
@@ -155,6 +160,7 @@ class ReindexPage extends React.Component {
               this.props.setPrivateKey('')
               this.props.setRefreshAddresses(true)
 
+              this.props.setMenuReady(false)
               this.props.setSaving(false)
               this.setCancelEnabled(true)
               this.props.setReindexWallet(false)
@@ -166,6 +172,9 @@ class ReindexPage extends React.Component {
               seed = await initalizeWallet(args)
               seed = JSON.parse(seed)
               if (seed.seed != null) {
+                sync()
+                await syncStatus()
+                this.props.setSynced(false)
                 this.props.setSeedPhrase(seed.seed)
                 this.props.setBirthday(seed.birthday)
 
@@ -175,6 +184,7 @@ class ReindexPage extends React.Component {
                 this.props.setPrivateKey('')
                 this.props.setRefreshAddresses(true)
 
+                this.props.setMenuReady(false)
                 this.props.setSaving(false)
                 this.setCancelEnabled(true)
               } else {
@@ -314,6 +324,7 @@ class ReindexPage extends React.Component {
 
 
 ReindexPage.propTypes = {
+  setMenuReady: PropTypes.func.isRequired,
   setSynced: PropTypes.func.isRequired,
   setRefreshAddresses: PropTypes.func.isRequired,
   setAddress: PropTypes.func.isRequired,
@@ -341,6 +352,7 @@ function mapStateToProps (state) {
 function matchDispatchToProps (dispatch) {
   return bindActionCreators(
     {
+      setMenuReady,
       setSynced,
       setRefreshAddresses,
       setAddress,

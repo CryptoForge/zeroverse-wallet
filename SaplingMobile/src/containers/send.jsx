@@ -236,11 +236,7 @@ class Send extends React.Component {
       })
 
       sendtx = JSON.stringify(sendtx)
-
-      console.log(sendtx)
-
       var tx = await send(sendtx)
-      console.log(tx)
 
       var processingTime = Date.now() - start
       this.setActualBuildTime(processingTime)
@@ -283,6 +279,7 @@ class Send extends React.Component {
 
     buildTimer() {
       if (this.state.building) {
+        clearTimeout(this.buildID)
         this.buildID = setTimeout(
           () => {
             this.setActualBuildTime(Date.now() - this.state.start)
