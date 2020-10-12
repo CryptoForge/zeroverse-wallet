@@ -20,10 +20,20 @@ export function readFromFile (fileName, onSuccess, onFail) {
   )
 }
 
-export function getLocalFileSystemURL(fileName) {
-  const pathToFile = cordova.file.dataDirectory + fileName
+export function getLocalFileSystemURL() {
+  const pathToFile = cordova.file.dataDirectory
   return new Promise((resolve, reject) => {
     window.resolveLocalFileSystemURL(pathToFile, (onSuccess) => {
+      resolve(onSuccess)
+    }, (onFail) => {
+      reject(onFail)
+    })
+  })
+}
+
+export function getFileEntry(directoryEntry, fileName) {
+  return new Promise((resolve, reject) => {
+    directoryEntry.getFile(fileName, { create: true }, (onSuccess) => {
       resolve(onSuccess)
     }, (onFail) => {
       reject(onFail)

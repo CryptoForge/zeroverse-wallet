@@ -38,7 +38,7 @@ import { crashlyticsEnabled } from './utils/firebase.js'
 //   writeDataToFile
 // } from './utils/fileops'
 
-import { ZERO_MOBILE_SAVE_PATH, readFromFile, getLocalFileSystemURL, writeDataToFile } from './utils/persistentStorage'
+import { ZERO_MOBILE_SAVE_PATH, readFromFile, getLocalFileSystemURL, getFileEntry, writeDataToFile } from './utils/persistentStorage'
 //import ZERO_LOGO from './assets/zero-logo-white.png'
 
 import {
@@ -236,7 +236,8 @@ class App extends React.Component {
         this.savingFile = true
         try {
           const data = {settings: this.props.settings}
-          const file = await getLocalFileSystemURL(ZERO_MOBILE_SAVE_PATH)
+          const folder = await getLocalFileSystemURL()
+          const file = await getFileEntry(folder, ZERO_MOBILE_SAVE_PATH)
           await writeDataToFile(file, data)
           this.savingFile = false
         } catch {
