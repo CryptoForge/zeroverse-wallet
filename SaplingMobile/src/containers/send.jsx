@@ -217,9 +217,6 @@ class Send extends React.Component {
     async createSpend() {
       this.setBuilding(true)
 
-
-
-
       var start = Date.now()
       this.setStart(start)
       this.buildTimer()
@@ -239,6 +236,7 @@ class Send extends React.Component {
       var tx = await send(sendtx)
 
       var processingTime = Date.now() - start
+      clearTimeout(this.buildID)
       this.setActualBuildTime(processingTime)
       this.setShowButtons(true)
       this.setBuilding(false)
@@ -278,15 +276,13 @@ class Send extends React.Component {
     }
 
     buildTimer() {
-      if (this.state.building) {
-        clearTimeout(this.buildID)
-        this.buildID = setTimeout(
-          () => {
-            this.setActualBuildTime(Date.now() - this.state.start)
-            this.buildTimer()
-          },100
-        )
-      }
+      clearTimeout(this.buildID)
+      this.buildID = setTimeout(
+        () => {
+          this.setActualBuildTime(Date.now() - this.state.start)
+          this.buildTimer()
+        },100
+      )
     }
 
     msToTime(duration) {
@@ -312,6 +308,7 @@ class Send extends React.Component {
 
     componentWillUnmount () {
       this.safeReleaseCamera()
+      clearTimeout(this.buildID)
     }
 
 
