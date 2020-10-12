@@ -7,6 +7,8 @@ import { connect } from 'react-redux'
 import axios from 'axios'
 import { coins } from '../utils/coins.js'
 
+import { setSeedPhrase } from '../actions/Secrets'
+
 import {
   setSynced,
   setZerInBtcValue,
@@ -154,8 +156,8 @@ class Main extends React.Component {
     }
 
     componentDidMount() {
+      this.props.setSeedPhrase('')
       this.getZerPrice()
-
       window.addEventListener("click", this.closeMenu)
 
     }
@@ -293,6 +295,7 @@ class Main extends React.Component {
 
 
 Main.propTypes = {
+  setSeedPhrase: PropTypes.func.isRequired,
   setRefreshAddresses: PropTypes.func.isRequired,
   setSaving: PropTypes.func.isRequired,
   setSynced: PropTypes.func.isRequired,
@@ -321,6 +324,7 @@ function mapStateToProps (state) {
 function matchDispatchToProps (dispatch) {
   return bindActionCreators(
     {
+      setSeedPhrase,
       setRefreshAddresses,
       setSaving,
       setSynced,

@@ -433,7 +433,6 @@ class App extends React.Component {
         } else {
           if(!this.state.hasExistingWallet) {
             app = <SetWalletPage setHasExistingWallet={(v) => this.setState({ hasExistingWallet: v })}/>
-            this.props.setSeedPhrase('')
           } else {
             if (this.props.context.selectCoin) {
               app = <CoinPage />
