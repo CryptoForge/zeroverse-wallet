@@ -394,10 +394,10 @@ class App extends React.Component {
                     <br/><br/><br/>
                     <RingSpinner/>
                     <LoginSocialContainer>
-                      <a href="https://www.zerocurrency.io">
+                      <a href="https://www.zero.directory">
                         <LoginSocial src={zerologo}/>
                       </a>
-                      <a href="https://github.com/zerocurrency">
+                      <a href="https://github.com/zerocurrencycoin">
                         <LoginSocial src={github}/>
                       </a>
                       <a href="https://twitter.com/ZeroCurrencies">

@@ -168,10 +168,10 @@ class SetPasswordPage extends React.Component {
               {'ZeroVerse 2.0.1'}
             </LoginPassword>
             <LoginSocialContainer>
-              <a href="https://www.zerocurrency.io">
+              <a href="https://www.zero.directory">
                 <LoginSocial src={zerologo}/>
               </a>
-              <a href="https://github.com/zerocurrency">
+              <a href="https://github.com/zerocurrencycoin">
                 <LoginSocial src={github}/>
               </a>
               <a href="https://twitter.com/ZeroCurrencies">
