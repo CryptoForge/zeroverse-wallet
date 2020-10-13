@@ -43,9 +43,10 @@ export const Col2Div = styled.div`
   margin: 0;
   padding: 0;
   width: ${props => ((props.theme.width) * 0.41) + 'px'};
-  color: ${props => props.header ? props.theme.colorSecondary : props.theme.colorTextLight};
+  color: ${props => props.header ? props.theme.colorSecondary : props.confirmed ? props.theme.colorTextLight : props.theme.colorButtonCancel};
   font-weight: ${props => props.header ? 'bold' : 'normal'};
   font-size: ${props => props.header ? props.theme.fontSectionTitle.size : props.theme.fontNormal.size};
+  font-style: ${props => props.confirmed ? 'normal' : 'italic'};
   text-align: ${props => props.header ? 'center' : 'left'};
 `
 
@@ -63,9 +64,10 @@ export const Col4Div = styled.div`
   margin: 0;
   padding: 0;
   width: ${props => ((props.theme.width) * 0.41) + 'px'};
-  color: ${props => props.header ? props.theme.colorSecondary : props.theme.colorTextLight};
+  color: ${props => props.header ? props.theme.colorSecondary : props.confirmed ? props.theme.colorTextLight : props.theme.colorButtonCancel};
   font-weight: ${props => props.header ? 'bold' : 'normal'};
   font-size: ${props => props.header ? props.theme.fontPin.size : props.theme.fontNormal.size};
+  font-style: ${props => props.confirmed ? 'normal' : 'italic'};
   text-align: ${props => props.header ? 'center' : 'right'};
 `
 

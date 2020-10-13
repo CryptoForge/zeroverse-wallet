@@ -84,9 +84,10 @@ class TransactionList extends React.Component {
                             address: meta[md].address,
                             value: meta[md].value,
                             memo: meta[md].memo,
-                            block: transactionList[t].block_height == null ? 0 : transactionList[t].block_height,
+                            block: transactionList[t].unconfirmed == true ? 'unconfirmed' : transactionList[t].block_height,
                             type: 0,
-                            index: index
+                            index: index,
+                            confirmed: transactionList[t].unconfirmed == true ? false : true
                       }
                       index++
                       transactions.push(itransaction)
@@ -120,9 +121,10 @@ class TransactionList extends React.Component {
                             address: meta[md].address,
                             value: meta[md].value * (-1),
                             memo: meta[md].memo,
-                            block: transactionList[t].block_height == null ? 0 : transactionList[t].block_height,
+                            block: transactionList[t].unconfirmed == true ? 'unconfirmed' : transactionList[t].block_height,
                             type: 1,
-                            index: index
+                            index: index,
+                            confirmed: transactionList[t].unconfirmed == true ? false : true
                       }
                       index++
                       transactions.push(otransaction)
@@ -158,12 +160,12 @@ class TransactionList extends React.Component {
           this.setTransactions(transactions)
           this.setTransactionList(
             <ListDiv>
-                <TransactionUl header={true}>
+                <TransactionUl header={true} confirmed={true}>
                   <TransactionLi>
                     <Col1Div></Col1Div>
-                    <Col2Div header={true}>Address</Col2Div>
+                    <Col2Div header={true} confirmed={true}>Address</Col2Div>
                     <Col3Div></Col3Div>
-                    <Col4Div header={true}>Value</Col4Div>
+                    <Col4Div header={true} confirmed={true}>Value</Col4Div>
                   </TransactionLi>
                 </TransactionUl>
                 {transactions.map((tx) => (
@@ -177,13 +179,13 @@ class TransactionList extends React.Component {
 
                         <TransactionLi >
                           <Col1Div>{''}</Col1Div>
-                          <Col2Div>
+                          <Col2Div confirmed={tx.confirmed}>
                             {tx.address.substring(0,8) + '...' + tx.address.substring(tx.address.length-8,tx.address.length)}
                           </Col2Div>
                           <Col3Div>
                             <ArrowImg src={tx.type==0 ? inArrow : outArrow}/>
                           </Col3Div>
-                          <Col4Div>{(tx.value/1e08).toFixed(8).toString()}</Col4Div>
+                          <Col4Div confirmed={tx.confirmed}>{(tx.value/1e08).toFixed(8).toString()}</Col4Div>
                           <Col5Div>{''}</Col5Div>
                         </TransactionLi>
 
